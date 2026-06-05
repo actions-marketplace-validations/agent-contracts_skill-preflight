@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+.turbo/
+.cache/
+*.log
+skill-preflight-report.*
+*.sarif
+*.tgz

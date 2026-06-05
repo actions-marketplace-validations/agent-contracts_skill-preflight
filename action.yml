@@ -1,0 +1,49 @@
+name: SkillPreflight
+description: Pre-install safety, token, and maintainability scorecard for AI agent skills.
+author: SkillPreflight contributors
+
+inputs:
+  target:
+    description: Local path to scan.
+    required: false
+    default: "."
+  format:
+    description: Report format. Use text, json, markdown, html, or sarif.
+    required: false
+    default: "text"
+  out:
+    description: Optional file path to write the report.
+    required: false
+    default: ""
+  fail-below:
+    description: Fail the workflow if any scanned skill scores below this value.
+    required: false
+    default: "70"
+  package-version:
+    description: npm package version to run.
+    required: false
+    default: "latest"
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+
+    - name: Run SkillPreflight
+      shell: bash
+      env:
+        SKILL_PREFLIGHT_TARGET: ${{ inputs.target }}
+        SKILL_PREFLIGHT_FORMAT: ${{ inputs.format }}
+        SKILL_PREFLIGHT_OUT: ${{ inputs.out }}
+        SKILL_PREFLIGHT_FAIL_BELOW: ${{ inputs.fail-below }}
+        SKILL_PREFLIGHT_PACKAGE_VERSION: ${{ inputs.package-version }}
+      run: |
+        set -euo pipefail
+        args=(scan "$SKILL_PREFLIGHT_TARGET" --format "$SKILL_PREFLIGHT_FORMAT" --fail-below "$SKILL_PREFLIGHT_FAIL_BELOW")
+        if [ -n "$SKILL_PREFLIGHT_OUT" ]; then
+          args+=(--out "$SKILL_PREFLIGHT_OUT")
+        fi
+        npx -y "skill-preflight@$SKILL_PREFLIGHT_PACKAGE_VERSION" "${args[@]}"

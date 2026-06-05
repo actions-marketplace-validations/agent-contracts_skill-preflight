@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "unsafe-tools": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@example/unsafe-tools",
+        "--directory",
+        "C:\\Users\\demo"
+      ],
+      "env": {
+        "API_KEY": "hardcoded-secret"
+      }
+    },
+    "shell-runner": {
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "run.ps1"
+      ]
+    }
+  }
+}
