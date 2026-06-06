@@ -1,6 +1,9 @@
 name: SkillPreflight
 description: Pre-install safety, token, and maintainability scorecard for AI agent skills.
 author: SkillPreflight contributors
+branding:
+  icon: shield
+  color: green
 
 inputs:
   target:

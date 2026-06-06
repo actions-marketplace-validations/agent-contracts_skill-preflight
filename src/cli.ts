@@ -24,7 +24,7 @@ export async function runCli(argv: string[]): Promise<void> {
   program
     .name("skill-preflight")
     .description("Pre-install safety, token, and maintainability scorecard for AI agent skills.")
-    .version("0.1.1");
+    .version("0.1.2");
 
   program
     .command("scan")
