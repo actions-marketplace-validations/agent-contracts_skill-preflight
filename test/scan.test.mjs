@@ -5,6 +5,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { scanSkillRoot } from "../dist/core/scan.js";
+import { parseGitHubUrl } from "../dist/core/filesystem.js";
 import { renderReport } from "../dist/report/render.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -12,6 +13,17 @@ const projectRoot = path.resolve(__dirname, "..");
 const execFileAsync = promisify(execFile);
 
 describe("SkillPreflight scanner", () => {
+  it("parses GitHub repository URLs with optional .git suffix", () => {
+    assert.deepEqual(parseGitHubUrl("https://github.com/affaan-m/ECC.git"), {
+      owner: "affaan-m",
+      repo: "ECC"
+    });
+    assert.deepEqual(parseGitHubUrl("https://github.com/agent-contracts/skill-preflight"), {
+      owner: "agent-contracts",
+      repo: "skill-preflight"
+    });
+  });
+
   it("scores a restrained skill highly", async () => {
     const report = await scanSkillRoot(path.join(projectRoot, "examples", "good-skill"), "good");
 
