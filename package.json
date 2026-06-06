@@ -32,6 +32,14 @@
   ],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/agent-contracts/skill-preflight.git"
+  },
+  "bugs": {
+    "url": "https://github.com/agent-contracts/skill-preflight/issues"
+  },
+  "homepage": "https://github.com/agent-contracts/skill-preflight#readme",
   "engines": {
     "node": ">=20"
   },

@@ -38,7 +38,7 @@ npx skill-preflight scan ./my-skill
 2. Add the remote:
 
 ```bash
-git remote add origin https://github.com/YOUR_ORG/skill-preflight.git
+git remote add origin https://github.com/agent-contracts/skill-preflight.git
 ```
 
 3. Commit and push:
@@ -54,5 +54,4 @@ git push -u origin main
 
 - Add a public score badge for README files.
 - Add a website or hosted report viewer.
-- Replace `YOUR_ORG` placeholders in README, `action.yml`, and SARIF metadata after creating the GitHub repository.
 - Add npm provenance and signed release workflow.

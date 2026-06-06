@@ -240,7 +240,7 @@ function renderSarif(report: ScanReport): string {
           tool: {
             driver: {
               name: "SkillPreflight",
-              informationUri: "https://github.com/YOUR_ORG/skill-preflight",
+              informationUri: "https://github.com/agent-contracts/skill-preflight",
               rules
             }
           },

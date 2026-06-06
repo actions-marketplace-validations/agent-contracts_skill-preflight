@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: YOUR_ORG/skill-preflight@v1
+      - uses: agent-contracts/skill-preflight@v1
         with:
           target: "."
           fail-below: "70"
@@ -50,7 +50,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: YOUR_ORG/skill-preflight@v1
+      - uses: agent-contracts/skill-preflight@v1
         with:
           target: "."
           format: sarif
