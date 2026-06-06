@@ -40,6 +40,9 @@
     "url": "https://github.com/agent-contracts/skill-preflight/issues"
   },
   "homepage": "https://github.com/agent-contracts/skill-preflight#readme",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "engines": {
     "node": ">=20"
   },
