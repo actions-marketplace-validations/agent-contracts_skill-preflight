@@ -30,4 +30,4 @@ jobs:
         run: npm pack --dry-run
 
       - name: Scan example skill
-        run: node dist/index.js scan examples/risky-skill --format sarif --out skill-preflight.sarif --fail-below 30
+        run: node dist/index.js scan examples/good-skill --format sarif --out skill-preflight.sarif --fail-below 70
