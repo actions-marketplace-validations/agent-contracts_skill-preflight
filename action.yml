@@ -26,6 +26,14 @@ inputs:
     description: npm package version to run.
     required: false
     default: "latest"
+  summary:
+    description: Show a compact summary instead of full skill details.
+    required: false
+    default: "false"
+  top:
+    description: Number of lowest-scoring skills to include in summary mode.
+    required: false
+    default: "20"
 
 runs:
   using: composite
@@ -43,10 +51,15 @@ runs:
         SKILL_PREFLIGHT_OUT: ${{ inputs.out }}
         SKILL_PREFLIGHT_FAIL_BELOW: ${{ inputs.fail-below }}
         SKILL_PREFLIGHT_PACKAGE_VERSION: ${{ inputs.package-version }}
+        SKILL_PREFLIGHT_SUMMARY: ${{ inputs.summary }}
+        SKILL_PREFLIGHT_TOP: ${{ inputs.top }}
       run: |
         set -euo pipefail
         args=(scan "$SKILL_PREFLIGHT_TARGET" --format "$SKILL_PREFLIGHT_FORMAT" --fail-below "$SKILL_PREFLIGHT_FAIL_BELOW")
         if [ -n "$SKILL_PREFLIGHT_OUT" ]; then
           args+=(--out "$SKILL_PREFLIGHT_OUT")
+        fi
+        if [ "$SKILL_PREFLIGHT_SUMMARY" = "true" ]; then
+          args+=(--summary --top "$SKILL_PREFLIGHT_TOP")
         fi
         npx -y "skill-preflight@$SKILL_PREFLIGHT_PACKAGE_VERSION" "${args[@]}"

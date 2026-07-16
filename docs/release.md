@@ -5,53 +5,49 @@ Use this checklist before publishing SkillPreflight.
 ## Local Verification
 
 ```bash
-npm install
+npm ci
 npm test
 npm pack --dry-run
-node dist/index.js scan examples/risky-skill
+node dist/index.js --version
+node dist/index.js scan examples --summary --top 1
+npm audit --omit=dev --registry https://registry.npmjs.org/
 ```
 
-## npm Publish
+## Version And Publish
 
-1. Confirm `package.json` name, version, license, and repository fields.
-2. Log in:
+1. Choose a patch, minor, or major version according to semantic versioning:
 
 ```bash
-npm login
+npm version patch --no-git-tag-version
 ```
 
-3. Publish:
+2. Run the local verification commands again.
+3. Commit and push the release changes, then wait for CI to pass.
+4. Confirm npm authentication and publish:
 
 ```bash
+npm whoami --registry https://registry.npmjs.org/
 npm publish --access public
 ```
 
-After publishing, users can run:
+5. Create and push the immutable release tag, then move the stable `v1` Action tag:
 
 ```bash
-npx skill-preflight scan ./my-skill
+git tag vX.Y.Z
+git tag -f v1 vX.Y.Z
+git push origin vX.Y.Z
+git push origin v1 --force
 ```
 
-## GitHub Repository
+6. Create a GitHub Release from `vX.Y.Z` with a concise change and verification summary.
+7. Verify the public package from a clean temporary directory:
 
-1. Create a public GitHub repository.
-2. Add the remote:
-
-```bash
-git remote add origin https://github.com/agent-contracts/skill-preflight.git
+npx -y skill-preflight@latest --version
+npx -y skill-preflight@latest scan ./my-skill
 ```
 
-3. Commit and push:
+## Credential Hygiene
 
-```bash
-git add .
-git commit -m "Initial SkillPreflight MVP"
-git branch -M main
-git push -u origin main
-```
-
-## First Milestones
-
-- Add a public score badge for README files.
-- Add a website or hosted report viewer.
-- Add npm provenance and signed release workflow.
+- Never commit `.npmrc`, access tokens, or registry credentials.
+- Prefer short-lived, package-scoped publishing tokens.
+- Revoke and rotate any token that has been exposed in logs or chat.

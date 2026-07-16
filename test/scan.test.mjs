@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import { describe, it } from "node:test";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -13,6 +14,13 @@ const projectRoot = path.resolve(__dirname, "..");
 const execFileAsync = promisify(execFile);
 
 describe("SkillPreflight scanner", () => {
+  it("reports the version from package metadata", async () => {
+    const { stdout } = await execFileAsync(process.execPath, ["dist/index.js", "--version"], { cwd: projectRoot });
+    const packageMetadata = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+
+    assert.equal(stdout.trim(), packageMetadata.version);
+  });
+
   it("parses GitHub repository URLs with optional .git suffix", () => {
     assert.deepEqual(parseGitHubUrl("https://github.com/affaan-m/ECC.git"), {
       owner: "affaan-m",
@@ -85,6 +93,58 @@ describe("SkillPreflight scanner", () => {
     assert.equal(sarif.version, "2.1.0");
     assert.equal(sarif.runs[0].tool.driver.name, "SkillPreflight");
     assert.ok(sarif.runs[0].results.some((result) => result.ruleId === "security.remote-script-execution"));
+  });
+
+  it("renders compact summaries with lowest scores first", async () => {
+    const good = await scanSkillRoot(path.join(projectRoot, "examples", "good-skill"), "good");
+    const risky = await scanSkillRoot(path.join(projectRoot, "examples", "risky-skill"), "risky");
+    const remoteRisky = {
+      ...risky,
+      target: "https://github.com/example/skills",
+      displayPath: "skills/risky-skill"
+    };
+    const report = {
+      generatedAt: "2026-07-16T00:00:00.000Z",
+      target: "examples",
+      reports: [good, remoteRisky],
+      summary: {
+        count: 2,
+        averageScore: Math.round((good.score + risky.score) / 2),
+        minScore: risky.score,
+        highRiskCount: 1
+      }
+    };
+
+    const text = renderReport(report, "text", { summary: true, top: 1 });
+    const json = JSON.parse(renderReport(report, "json", { summary: true, top: 1 }));
+
+    assert.match(text, /SkillPreflight Summary/);
+    assert.match(text, /showing 1 of 2/);
+    assert.match(text, new RegExp(risky.skillName));
+    assert.match(text, /skills\/risky-skill/);
+    assert.equal(text.includes(risky.rootPath), false);
+    assert.doesNotMatch(text, new RegExp(good.skillName));
+    assert.equal(json.lowestScoringSkills.length, 1);
+    assert.equal(json.lowestScoringSkills[0].skillName, risky.skillName);
+    assert.equal(json.lowestScoringSkills[0].path, "skills/risky-skill");
+    assert.equal(json.reports, undefined);
+  });
+
+  it("rejects summary mode for SARIF reports", async () => {
+    const skill = await scanSkillRoot(path.join(projectRoot, "examples", "good-skill"), "good");
+    const report = {
+      generatedAt: "2026-07-16T00:00:00.000Z",
+      target: "good",
+      reports: [skill],
+      summary: {
+        count: 1,
+        averageScore: skill.score,
+        minScore: skill.score,
+        highRiskCount: 0
+      }
+    };
+
+    assert.throws(() => renderReport(report, "sarif", { summary: true }), /not supported with SARIF/);
   });
 
   it("renders a Shields-compatible badge payload", async () => {

@@ -79,6 +79,7 @@ export interface CategoryScore {
 export interface SkillReport {
   target: string;
   rootPath: string;
+  displayPath?: string;
   skillName: string;
   score: number;
   grade: string;

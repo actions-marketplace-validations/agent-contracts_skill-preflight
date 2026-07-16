@@ -1,8 +1,12 @@
 import { writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { Command } from "commander";
 import { scan } from "./core/scan.js";
 import { parseFormat, renderReport } from "./report/render.js";
+
+const require = createRequire(import.meta.url);
+const packageMetadata = require("../package.json") as { version: string };
 
 interface ScanCommandOptions {
   installed?: boolean;
@@ -10,6 +14,8 @@ interface ScanCommandOptions {
   out?: string;
   failBelow?: string;
   keepTemp?: boolean;
+  summary?: boolean;
+  top?: string;
 }
 
 interface BadgeCommandOptions {
@@ -24,7 +30,7 @@ export async function runCli(argv: string[]): Promise<void> {
   program
     .name("skill-preflight")
     .description("Pre-install safety, token, and maintainability scorecard for AI agent skills.")
-    .version("0.1.3");
+    .version(packageMetadata.version);
 
   program
     .command("scan")
@@ -34,14 +40,28 @@ export async function runCli(argv: string[]): Promise<void> {
     .option("--out <file>", "Write report to a file")
     .option("--fail-below <score>", "Exit with code 1 if any skill score is below this threshold")
     .option("--keep-temp", "Keep temporary GitHub clones for debugging")
+    .option("--summary", "Show a compact summary instead of full skill details")
+    .option("--top <count>", "Number of lowest-scoring skills to include with --summary")
     .action(async (target: string | undefined, options: ScanCommandOptions) => {
       const format = parseFormat(options.format ?? "text");
+      if (options.top !== undefined && !options.summary) {
+        throw new Error("--top can only be used with --summary.");
+      }
+
+      const top = options.summary ? parsePositiveInteger(options.top ?? "20", "--top") : undefined;
+      if (options.summary && format === "sarif") {
+        throw new Error("--summary is not supported with --format sarif.");
+      }
+
       const report = await scan({
         target,
         installed: options.installed,
         keepTemp: options.keepTemp
       });
-      const rendered = renderReport(report, format);
+      const rendered = renderReport(report, format, {
+        summary: options.summary,
+        top
+      });
 
       if (options.out) {
         const outPath = path.resolve(options.out);
@@ -96,6 +116,15 @@ export async function runCli(argv: string[]): Promise<void> {
     process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
     process.exitCode = 1;
   }
+}
+
+function parsePositiveInteger(value: string, optionName: string): number {
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) {
+    throw new Error(`Invalid ${optionName} value: ${value}. Use a positive integer.`);
+  }
+
+  return parsed;
 }
 
 function renderBadge(score: number, highRiskCount: number): {

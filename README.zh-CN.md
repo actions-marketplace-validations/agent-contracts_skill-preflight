@@ -41,6 +41,12 @@ npx skill-preflight scan https://github.com/user/some-skill
 npx skill-preflight scan --installed
 ```
 
+如果仓库包含大量 Skill，可以只查看总览和分数最低的 20 项：
+
+```bash
+npx skill-preflight scan https://github.com/user/skill-collection --summary --top 20
+```
+
 生成 JSON 报告：
 
 ```bash
@@ -97,7 +103,11 @@ skill-preflight scan <target>
 --out <file>            将报告写入文件。
 --fail-below <score>    如果任意 Skill 分数低于该阈值，则以退出码 1 结束。
 --keep-temp             保留临时 GitHub 下载目录，方便调试。
+--summary               仅显示总体结果和分数最低的 Skill。
+--top <count>           --summary 模式下显示的 Skill 数量。默认 20。
 ```
+
+精简摘要支持 text、JSON、Markdown 和 HTML；用于代码扫描的 SARIF 始终保留全部发现。
 
 生成 Shields 兼容的 badge JSON：
 

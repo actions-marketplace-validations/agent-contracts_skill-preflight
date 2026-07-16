@@ -63,12 +63,20 @@ jobs:
           sarif_file: skill-preflight.sarif
 ```
 
+## Large Skill Collections
+
+For repositories containing many skills, use summary mode to keep the workflow log focused on the lowest-scoring entries:
+
+```yaml
+- uses: agent-contracts/skill-preflight@v1
+  with:
+    target: "."
+    summary: "true"
+    top: "20"
+    fail-below: "70"
+```
+
 ## Notes
 
 The composite action runs the published npm package with `npx`.
-
-Before the first public release, replace the action usage with a direct command:
-
-```yaml
-- run: npx -y skill-preflight@latest scan . --fail-below 70
-```
+Use `package-version` to pin a specific npm release when reproducible builds are required.

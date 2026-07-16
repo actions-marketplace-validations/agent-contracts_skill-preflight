@@ -25,7 +25,9 @@ export async function scan(options: ScanOptions): Promise<ScanReport> {
       }
 
       for (const root of roots) {
-        reports.push(await scanSkillRoot(root, resolved.displayTarget));
+        const report = await scanSkillRoot(root, resolved.displayTarget);
+        report.displayPath = path.relative(resolved.localPath, root).split(path.sep).join("/") || ".";
+        reports.push(report);
       }
     } finally {
       await resolved.cleanup?.();

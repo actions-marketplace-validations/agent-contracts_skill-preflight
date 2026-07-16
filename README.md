@@ -26,6 +26,12 @@ Scan common local skill directories:
 npx skill-preflight scan --installed
 ```
 
+For repositories containing many skills, show a compact list of the 20 lowest-scoring skills:
+
+```bash
+npx skill-preflight scan https://github.com/user/skill-collection --summary --top 20
+```
+
 ## Local Development
 
 ```bash
@@ -63,7 +69,11 @@ Options:
 --out <file>            Write report to a file.
 --fail-below <score>    Exit with code 1 if any scanned skill is below this score.
 --keep-temp             Keep temporary clones for debugging.
+--summary               Show aggregate results and the lowest-scoring skills only.
+--top <count>           Number of skills shown with --summary. Default: 20.
 ```
+
+Summary mode supports text, JSON, Markdown, and HTML output. SARIF always contains the full set of findings for code scanning.
 
 Generate Shields-compatible badge JSON:
 
