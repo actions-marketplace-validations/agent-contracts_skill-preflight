@@ -4,7 +4,7 @@
   "description": "Pre-install safety, token, and maintainability scorecard for AI agent skills.",
   "type": "module",
   "bin": {
-    "skill-preflight": "./dist/index.js"
+    "skill-preflight": "dist/index.js"
   },
   "files": [
     "dist",
