@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -7,6 +7,7 @@ import { promisify } from "node:util";
 import * as tar from "tar";
 import { ProxyAgent } from "undici";
 import type { ResolvedTarget, ScannedFile, TextFile } from "./types.js";
+import { isPathExcluded } from "./policy.js";
 import { isProbablyText, pathExists, toPosixPath } from "./utils.js";
 
 const execFileAsync = promisify(execFile);
@@ -130,9 +131,9 @@ export function parseGitHubUrl(value: string): GitHubRepoRef | undefined {
   };
 }
 
-export async function discoverSkillRoots(rootPath: string): Promise<string[]> {
+export async function discoverSkillRoots(rootPath: string, exclude: string[] = []): Promise<string[]> {
   const directSkill = path.join(rootPath, "SKILL.md");
-  if (await pathExists(directSkill)) {
+  if ((await pathExists(directSkill)) && !isPathExcluded("SKILL.md", exclude)) {
     return [rootPath];
   }
 
@@ -141,12 +142,17 @@ export async function discoverSkillRoots(rootPath: string): Promise<string[]> {
     if (path.basename(filePath).toLowerCase() === "skill.md") {
       roots.push(path.dirname(filePath));
     }
-  });
+  }, { basePath: rootPath, exclude });
 
   return [...new Set(roots)].sort();
 }
 
-export async function readSkillFiles(rootPath: string): Promise<{
+export interface ReadSkillFilesOptions {
+  basePath?: string;
+  exclude?: string[];
+}
+
+export async function readSkillFiles(rootPath: string, options: ReadSkillFilesOptions = {}): Promise<{
   files: ScannedFile[];
   textFiles: TextFile[];
 }> {
@@ -154,14 +160,26 @@ export async function readSkillFiles(rootPath: string): Promise<{
   const textFiles: TextFile[] = [];
 
   await walk(rootPath, async (absolutePath) => {
-    const buffer = await readFile(absolutePath);
+    const metadata = await stat(absolutePath);
     const relativePath = toPosixPath(path.relative(rootPath, absolutePath));
-    const isText = buffer.length <= MAX_TEXT_FILE_BYTES && isProbablyText(buffer);
+
+    if (metadata.size > MAX_TEXT_FILE_BYTES) {
+      files.push({
+        path: relativePath,
+        absolutePath,
+        bytes: metadata.size,
+        isText: false
+      });
+      return;
+    }
+
+    const buffer = await readFile(absolutePath);
+    const isText = isProbablyText(buffer);
 
     files.push({
       path: relativePath,
       absolutePath,
-      bytes: buffer.length,
+      bytes: metadata.size,
       isText
     });
 
@@ -175,25 +193,38 @@ export async function readSkillFiles(rootPath: string): Promise<{
         lines: content.split(/\r?\n/)
       });
     }
+  }, {
+    basePath: options.basePath ?? rootPath,
+    exclude: options.exclude ?? []
   });
 
   return { files, textFiles };
 }
 
-async function walk(rootPath: string, onFile: (filePath: string) => Promise<void>): Promise<void> {
+interface WalkOptions {
+  basePath: string;
+  exclude: string[];
+}
+
+async function walk(
+  rootPath: string,
+  onFile: (filePath: string) => Promise<void>,
+  options: WalkOptions = { basePath: rootPath, exclude: [] }
+): Promise<void> {
   const entries = await readdir(rootPath, { withFileTypes: true });
 
   for (const entry of entries) {
     const absolutePath = path.join(rootPath, entry.name);
+    const relativePath = toPosixPath(path.relative(options.basePath, absolutePath));
 
     if (entry.isDirectory()) {
-      if (!IGNORED_DIRS.has(entry.name)) {
-        await walk(absolutePath, onFile);
+      if (!IGNORED_DIRS.has(entry.name) && !isPathExcluded(relativePath, options.exclude, true)) {
+        await walk(absolutePath, onFile, options);
       }
       continue;
     }
 
-    if (entry.isFile()) {
+    if (entry.isFile() && !isPathExcluded(relativePath, options.exclude)) {
       await onFile(absolutePath);
     }
   }

@@ -47,6 +47,12 @@ npx skill-preflight scan --installed
 npx skill-preflight scan https://github.com/user/skill-collection --summary --top 20
 ```
 
+使用本地策略文件控制排除项、误报和 CI 阈值：
+
+```bash
+npx skill-preflight scan . --config skill-preflight.json
+```
+
 生成 JSON 报告：
 
 ```bash
@@ -82,6 +88,8 @@ SkillPreflight 使用 100 分评分模型：
 | 可靠性 | 10 | 测试、fixtures、确定性工作流、错误处理 |
 | 兼容性 | 5 | 硬编码本地路径、系统相关假设、脆弱 shell 用法 |
 
+同一规则在多个文件中的命中仍会全部显示，但每个规则 ID 对单个 Skill 只扣分一次，避免大型仓库因为同类问题重复出现而被过度扣分。
+
 评分示例：
 
 ```text
@@ -102,12 +110,37 @@ skill-preflight scan <target>
 --format <format>       输出格式：text、json、markdown、html 或 sarif。默认 text。
 --out <file>            将报告写入文件。
 --fail-below <score>    如果任意 Skill 分数低于该阈值，则以退出码 1 结束。
+--fail-on <severity>    如果发现达到指定严重级别则失败，可用 info、low、medium、high、critical。
+--config <file>         显式加载 JSON 策略文件。
+--exclude <glob>        排除相对于扫描目标的路径，可重复使用。
+--ignore-rule <id>      抑制规则 ID 或通配模式，可重复使用。
 --keep-temp             保留临时 GitHub 下载目录，方便调试。
 --summary               仅显示总体结果和分数最低的 Skill。
 --top <count>           --summary 模式下显示的 Skill 数量。默认 20。
 ```
 
 精简摘要支持 text、JSON、Markdown 和 HTML；用于代码扫描的 SARIF 始终保留全部发现。
+
+## 策略和 CI 门禁
+
+策略文件适合排除生成文件、测试夹具以及已经人工确认的误报：
+
+```json
+{
+  "exclude": ["fixtures/**", "vendor/**"],
+  "ignoreRules": ["compatibility.os-specific-command"],
+  "failBelow": 70,
+  "failOn": "high"
+}
+```
+
+```bash
+skill-preflight scan . --config skill-preflight.json
+```
+
+SkillPreflight 不会自动加载被扫描仓库中的配置，必须由用户显式指定，防止不可信的远程 Skill 自行隐藏风险。被抑制的发现不会扣分或触发门禁，但会保留在 JSON 报告中并计入“已抑制发现”数量。
+
+完整配置说明请参考 `docs/policy.md`。
 
 生成 Shields 兼容的 badge JSON：
 
@@ -139,11 +172,13 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: agent-contracts/skill-preflight@v1
         with:
           target: "."
           fail-below: "70"
+          fail-on: high
+          config: skill-preflight.json
 ```
 
 如果需要 GitHub Code Scanning，可以输出 SARIF：
@@ -156,7 +191,7 @@ skill-preflight scan . --format sarif --out skill-preflight.sarif
 
 ## 安全原则
 
-SkillPreflight 不会执行被扫描 Skill 里的脚本。
+SkillPreflight 不会执行被扫描 Skill 里的脚本。超大文件只统计体积，不会整块载入文本分析。
 
 它只读取文件并进行静态分析，重点识别潜在风险，例如：
 

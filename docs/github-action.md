@@ -18,12 +18,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: agent-contracts/skill-preflight@v1
         with:
           target: "."
           fail-below: "70"
+          fail-on: high
 ```
 
 ## SARIF Upload
@@ -48,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: agent-contracts/skill-preflight@v1
         with:
@@ -75,6 +76,34 @@ For repositories containing many skills, use summary mode to keep the workflow l
     top: "20"
     fail-below: "70"
 ```
+
+## Policy and Exclusions
+
+Use an explicit policy file when the repository contains generated fixtures or reviewed false positives:
+
+```yaml
+- uses: agent-contracts/skill-preflight@v1
+  with:
+    target: "."
+    config: skill-preflight.json
+    fail-below: "70"
+    fail-on: high
+```
+
+For small overrides, `exclude` and `ignore-rules` accept newline-separated values:
+
+```yaml
+- uses: agent-contracts/skill-preflight@v1
+  with:
+    target: "."
+    exclude: |
+      fixtures/**
+      vendor/**
+    ignore-rules: |
+      compatibility.os-specific-command
+```
+
+See `docs/policy.md` for precedence and suppression visibility.
 
 ## Notes
 

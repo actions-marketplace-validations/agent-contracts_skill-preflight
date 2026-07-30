@@ -54,6 +54,7 @@ function renderSummaryText(report: ScanReport, top: number): string {
     `Average score: ${report.summary.averageScore}/100`,
     `Minimum score: ${report.summary.minScore}/100`,
     `High risk skills: ${report.summary.highRiskCount}`,
+    `Suppressed findings: ${suppressedCount(report)}`,
     "",
     `Lowest scoring skills (showing ${ranked.length} of ${report.summary.count}):`
   ];
@@ -104,6 +105,7 @@ function renderSummaryMarkdown(report: ScanReport, top: number): string {
     `- Average score: ${report.summary.averageScore}/100`,
     `- Minimum score: ${report.summary.minScore}/100`,
     `- High risk skills: ${report.summary.highRiskCount}`,
+    `- Suppressed findings: ${suppressedCount(report)}`,
     "",
     `## Lowest Scoring Skills (showing ${ranked.length} of ${report.summary.count})`,
     "",
@@ -182,6 +184,7 @@ function renderSummaryHtml(report: ScanReport, top: number): string {
         <div class="metric"><span>Average score</span><strong>${report.summary.averageScore}/100</strong></div>
         <div class="metric"><span>Minimum score</span><strong>${report.summary.minScore}/100</strong></div>
         <div class="metric"><span>High risk</span><strong>${report.summary.highRiskCount}</strong></div>
+        <div class="metric"><span>Suppressed findings</span><strong>${suppressedCount(report)}</strong></div>
       </div>
     </section>
     <h2>Lowest Scoring Skills (showing ${ranked.length} of ${report.summary.count})</h2>
@@ -212,11 +215,12 @@ function renderText(report: ScanReport): string {
   lines.push(`Generated: ${report.generatedAt}`);
   lines.push(`Skills scanned: ${report.summary.count}`);
   lines.push(`Average score: ${report.summary.averageScore}/100`);
+  lines.push(`Suppressed findings: ${suppressedCount(report)}`);
   lines.push("");
 
   for (const skill of report.reports) {
     lines.push(`${skill.skillName}: ${skill.score}/100 (${skill.grade}) - ${skill.recommendation}`);
-    lines.push(`Path: ${skill.rootPath}`);
+    lines.push(`Path: ${displaySkillPath(skill)}`);
     lines.push("Category scores:");
 
     for (const category of skill.categories) {
@@ -227,6 +231,7 @@ function renderText(report: ScanReport): string {
     lines.push(`  - Files: ${skill.metrics.totalFiles}`);
     lines.push(`  - Size: ${formatBytes(skill.metrics.totalBytes)}`);
     lines.push(`  - Estimated activation tokens: ${skill.metrics.estimatedActivationTokens}`);
+    lines.push(`  - Suppressed findings: ${skill.suppressedFindings.length}`);
 
     if (skill.findings.length === 0) {
       lines.push("Findings: none");
@@ -258,6 +263,7 @@ function renderMarkdown(report: ScanReport): string {
   lines.push(`- Skills scanned: ${report.summary.count}`);
   lines.push(`- Average score: ${report.summary.averageScore}/100`);
   lines.push(`- High risk skills: ${report.summary.highRiskCount}`);
+  lines.push(`- Suppressed findings: ${suppressedCount(report)}`);
   lines.push("");
 
   for (const skill of report.reports) {
@@ -265,7 +271,7 @@ function renderMarkdown(report: ScanReport): string {
     lines.push("");
     lines.push(`**Recommendation:** ${skill.recommendation}`);
     lines.push("");
-    lines.push(`**Path:** \`${skill.rootPath}\``);
+    lines.push(`**Path:** \`${displaySkillPath(skill)}\``);
     lines.push("");
     lines.push("| Category | Score |");
     lines.push("| --- | ---: |");
@@ -278,6 +284,7 @@ function renderMarkdown(report: ScanReport): string {
     lines.push(`| Files | ${skill.metrics.totalFiles} |`);
     lines.push(`| Size | ${formatBytes(skill.metrics.totalBytes)} |`);
     lines.push(`| Estimated activation tokens | ${skill.metrics.estimatedActivationTokens} |`);
+    lines.push(`| Suppressed findings | ${skill.suppressedFindings.length} |`);
     lines.push("");
     lines.push("### Findings");
     lines.push("");
@@ -350,6 +357,7 @@ function renderHtml(report: ScanReport): string {
         <div class="metric"><span>Average score</span><strong>${report.summary.averageScore}/100</strong></div>
         <div class="metric"><span>Minimum score</span><strong>${report.summary.minScore}/100</strong></div>
         <div class="metric"><span>High risk</span><strong>${report.summary.highRiskCount}</strong></div>
+        <div class="metric"><span>Suppressed findings</span><strong>${suppressedCount(report)}</strong></div>
       </div>
     </section>
     ${skillSections}
@@ -376,7 +384,7 @@ function renderSarif(report: ScanReport): string {
           {
             physicalLocation: {
               artifactLocation: {
-                uri: finding.file ? normalizeSarifUri(finding.file) : normalizeSarifUri(skill.rootPath)
+                uri: finding.file ? normalizeSarifUri(finding.file) : normalizeSarifUri(displaySkillPath(skill))
               },
               region: finding.line ? { startLine: finding.line } : undefined
             }
@@ -431,7 +439,9 @@ function renderSarif(report: ScanReport): string {
             target: report.target,
             generatedAt: report.generatedAt,
             averageScore: report.summary.averageScore,
-            highRiskCount: report.summary.highRiskCount
+            highRiskCount: report.summary.highRiskCount,
+            suppressedCount: suppressedCount(report),
+            policy: report.policy
           },
           results
         }
@@ -464,11 +474,12 @@ function renderSkillHtml(skill: SkillReport): string {
   return `<section class="skill">
   <h2>${escapeHtml(skill.skillName)}: ${skill.score}/100 (${skill.grade})</h2>
   <p><strong>Recommendation:</strong> ${escapeHtml(skill.recommendation)}</p>
-  <p><strong>Path:</strong> <code>${escapeHtml(skill.rootPath)}</code></p>
+  <p><strong>Path:</strong> <code>${escapeHtml(displaySkillPath(skill))}</code></p>
   <div class="grid">
     <div class="metric"><span>Files</span><strong>${skill.metrics.totalFiles}</strong></div>
     <div class="metric"><span>Size</span><strong>${formatBytes(skill.metrics.totalBytes)}</strong></div>
     <div class="metric"><span>Activation tokens</span><strong>${skill.metrics.estimatedActivationTokens}</strong></div>
+    <div class="metric"><span>Suppressed findings</span><strong>${skill.suppressedFindings.length}</strong></div>
   </div>
   <table>
     <thead><tr><th>Category</th><th>Score</th></tr></thead>
@@ -499,6 +510,13 @@ function highRiskFindingCount(skill: SkillReport): number {
 
 function displaySkillPath(skill: SkillReport): string {
   return skill.displayPath ?? skill.rootPath;
+}
+
+function suppressedCount(report: ScanReport): number {
+  return report.summary.suppressedCount ?? report.reports.reduce(
+    (sum, skill) => sum + (skill.suppressedFindings?.length ?? 0),
+    0
+  );
 }
 
 function normalizeTop(top: number | undefined): number {

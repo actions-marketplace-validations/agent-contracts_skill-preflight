@@ -1,5 +1,6 @@
 import path from "node:path";
 import { commonInstalledSkillDirs, discoverSkillRoots, readSkillFiles, resolveTarget } from "./filesystem.js";
+import { suppressFindings, uniqueStrings } from "./policy.js";
 import { rules } from "./rules.js";
 import { scoreFindings, sortFindings } from "./scoring.js";
 import type { ScanMetrics, ScanOptions, ScanReport, SkillContext, SkillReport } from "./types.js";
@@ -14,19 +15,27 @@ const ASSET_FILE_PATTERN = /\.(png|jpe?g|gif|webp|svg|pdf|zip|tar|gz|mp4|mov|mp3
 export async function scan(options: ScanOptions): Promise<ScanReport> {
   const targets = await resolveScanTargets(options);
   const reports: SkillReport[] = [];
+  const exclude = uniqueStrings(options.exclude ?? []);
+  const ignoreRules = uniqueStrings(options.ignoreRules ?? []);
 
   for (const target of targets) {
     const resolved = await resolveTarget(target, options.keepTemp);
 
     try {
-      const roots = await discoverSkillRoots(resolved.localPath);
+      const roots = await discoverSkillRoots(resolved.localPath, exclude);
       if (roots.length === 0) {
-        throw new Error(`No SKILL.md files found under ${target}`);
+        const suffix = exclude.length > 0 ? " after applying exclusions" : "";
+        throw new Error(`No SKILL.md files found under ${target}${suffix}`);
       }
 
       for (const root of roots) {
-        const report = await scanSkillRoot(root, resolved.displayTarget);
-        report.displayPath = path.relative(resolved.localPath, root).split(path.sep).join("/") || ".";
+        const displayPath = path.relative(resolved.localPath, root).split(path.sep).join("/") || ".";
+        const report = await scanSkillRoot(root, resolved.displayTarget, {
+          basePath: resolved.localPath,
+          exclude,
+          ignoreRules
+        });
+        report.displayPath = displayPath;
         reports.push(report);
       }
     } finally {
@@ -38,12 +47,29 @@ export async function scan(options: ScanOptions): Promise<ScanReport> {
     generatedAt: new Date().toISOString(),
     target: options.installed ? "installed skills" : targets.join(", "),
     reports,
-    summary: summarize(reports)
+    summary: summarize(reports),
+    policy: {
+      exclude,
+      ignoreRules
+    }
   };
 }
 
-export async function scanSkillRoot(rootPath: string, target: string): Promise<SkillReport> {
-  const { files, textFiles } = await readSkillFiles(rootPath);
+export interface ScanSkillRootOptions {
+  basePath?: string;
+  exclude?: string[];
+  ignoreRules?: string[];
+}
+
+export async function scanSkillRoot(
+  rootPath: string,
+  target: string,
+  options: ScanSkillRootOptions = {}
+): Promise<SkillReport> {
+  const { files, textFiles } = await readSkillFiles(rootPath, {
+    basePath: options.basePath,
+    exclude: options.exclude
+  });
   const skillFile = textFiles.find((file) => file.path.toLowerCase() === "skill.md");
   const context: SkillContext = {
     rootPath,
@@ -54,7 +80,11 @@ export async function scanSkillRoot(rootPath: string, target: string): Promise<S
     metrics: buildMetrics(files, textFiles, skillFile)
   };
 
-  const findings = sortFindings(rules.flatMap((rule) => rule.run(context)));
+  const allFindings = sortFindings(rules.flatMap((rule) => rule.run(context)));
+  const { active: findings, suppressed: suppressedFindings } = suppressFindings(
+    allFindings,
+    uniqueStrings(options.ignoreRules ?? [])
+  );
   const scoring = scoreFindings(findings);
 
   return {
@@ -66,6 +96,7 @@ export async function scanSkillRoot(rootPath: string, target: string): Promise<S
     recommendation: scoring.recommendation,
     categories: scoring.categories,
     findings,
+    suppressedFindings,
     metrics: context.metrics
   };
 }
@@ -130,7 +161,8 @@ function summarize(reports: SkillReport[]): ScanReport["summary"] {
       count: 0,
       averageScore: 0,
       minScore: 0,
-      highRiskCount: 0
+      highRiskCount: 0,
+      suppressedCount: 0
     };
   }
 
@@ -139,6 +171,9 @@ function summarize(reports: SkillReport[]): ScanReport["summary"] {
     count: reports.length,
     averageScore: Math.round(total / reports.length),
     minScore: Math.min(...reports.map((report) => report.score)),
-    highRiskCount: reports.filter((report) => report.score < 60 || report.findings.some((finding) => finding.severity === "critical")).length
+    highRiskCount: reports.filter(
+      (report) => report.score < 60 || report.findings.some((finding) => finding.severity === "critical")
+    ).length,
+    suppressedCount: reports.reduce((sum, report) => sum + report.suppressedFindings.length, 0)
   };
 }

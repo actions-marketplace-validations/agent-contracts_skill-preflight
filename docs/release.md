@@ -52,6 +52,7 @@ git push origin v1 --force
 6. Create a GitHub Release from `vX.Y.Z` with a concise change and verification summary.
 7. Verify the public package from a clean temporary directory:
 
+```bash
 npx -y skill-preflight@latest --version
 npx -y skill-preflight@latest scan ./my-skill
 ```

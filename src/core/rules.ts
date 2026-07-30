@@ -103,6 +103,36 @@ const securityPatterns: PatternRule[] = [
     description: "The skill contains language associated with prompt injection or instruction override.",
     recommendation: "Remove instruction-override text and keep the skill aligned with user and system instructions.",
     scoreImpact: 10
+  },
+  {
+    id: "security.unicode-bidi-control",
+    category: "security",
+    severity: "high",
+    title: "Bidirectional Unicode control character",
+    pattern: /[\u202A-\u202E\u2066-\u2069]/u,
+    description: "The file contains a bidirectional control character that can make instructions appear different from their stored order.",
+    recommendation: "Remove bidirectional controls and keep security-sensitive instructions in visible logical order.",
+    scoreImpact: 9
+  },
+  {
+    id: "security.unicode-tag-characters",
+    category: "security",
+    severity: "critical",
+    title: "Hidden Unicode tag characters",
+    pattern: /[\u{E0000}-\u{E007F}]/u,
+    description: "The file contains Unicode tag characters that can encode text invisible in normal editors.",
+    recommendation: "Remove hidden tag characters and review the surrounding instructions from a raw or escaped text view.",
+    scoreImpact: 12
+  },
+  {
+    id: "security.zero-width-characters",
+    category: "security",
+    severity: "medium",
+    title: "Zero-width Unicode characters",
+    pattern: /[\u200B\u200C\u200D\u2060]/u,
+    description: "The file contains zero-width characters that may conceal or split security-sensitive text.",
+    recommendation: "Remove unexpected zero-width characters or document why they are required.",
+    scoreImpact: 5
   }
 ];
 

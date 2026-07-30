@@ -32,6 +32,12 @@ For repositories containing many skills, show a compact list of the 20 lowest-sc
 npx skill-preflight scan https://github.com/user/skill-collection --summary --top 20
 ```
 
+Apply a local policy when scanning a repository:
+
+```bash
+npx skill-preflight scan . --config skill-preflight.json
+```
+
 ## Local Development
 
 ```bash
@@ -55,6 +61,8 @@ SkillPreflight uses a 100-point score:
 | Reliability | 10 | Tests, fixtures, deterministic workflow, error handling |
 | Compatibility | 5 | Hardcoded local paths, OS-specific assumptions, fragile shell usage |
 
+Repeated locations for the same rule remain visible, but each rule ID deducts points only once per skill. This keeps large repositories from receiving a lower score merely because the same issue appears in several files.
+
 ## CLI
 
 ```bash
@@ -68,12 +76,37 @@ Options:
 --format <format>       text, json, markdown, html, or sarif. Default: text.
 --out <file>            Write report to a file.
 --fail-below <score>    Exit with code 1 if any scanned skill is below this score.
+--fail-on <severity>    Exit for findings at or above info, low, medium, high, or critical.
+--config <file>         Load an explicit JSON policy file.
+--exclude <glob>        Exclude a target-relative path glob. Repeat as needed.
+--ignore-rule <id>      Suppress a rule ID or wildcard pattern. Repeat as needed.
 --keep-temp             Keep temporary clones for debugging.
 --summary               Show aggregate results and the lowest-scoring skills only.
 --top <count>           Number of skills shown with --summary. Default: 20.
 ```
 
 Summary mode supports text, JSON, Markdown, and HTML output. SARIF always contains the full set of findings for code scanning.
+
+## Policy and CI Gates
+
+Use an explicit JSON policy to keep generated files and reviewed false positives out of a scan:
+
+```json
+{
+  "exclude": ["fixtures/**", "vendor/**"],
+  "ignoreRules": ["compatibility.os-specific-command"],
+  "failBelow": 70,
+  "failOn": "high"
+}
+```
+
+```bash
+skill-preflight scan . --config skill-preflight.json
+```
+
+Config files are never loaded from a scanned repository automatically. This prevents an untrusted remote skill from suppressing its own findings. CLI exclusions and ignored rules are merged with the config; CLI score and severity gates take precedence.
+
+Suppressed findings remain counted in the report so policy decisions are visible. See `docs/policy.md` for glob behavior and CI examples.
 
 Generate Shields-compatible badge JSON:
 
@@ -105,11 +138,13 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: agent-contracts/skill-preflight@v1
         with:
           target: "."
           fail-below: "70"
+          fail-on: high
+          config: skill-preflight.json
 ```
 
 For GitHub code scanning, emit SARIF:
@@ -122,7 +157,7 @@ See `docs/github-action.md` for the full workflow.
 
 ## Safety Principle
 
-SkillPreflight does not execute scripts inside scanned skills. It only reads files and performs static analysis.
+SkillPreflight does not execute scripts inside scanned skills. It only reads files and performs static analysis. Oversized files are measured without being loaded into text analysis.
 
 ## Example Output
 

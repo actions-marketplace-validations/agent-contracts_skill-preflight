@@ -1,12 +1,15 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
 import { describe, it } from "node:test";
 import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
-import { scanSkillRoot } from "../dist/core/scan.js";
-import { parseGitHubUrl } from "../dist/core/filesystem.js";
+import { parseGitHubUrl, readSkillFiles } from "../dist/core/filesystem.js";
+import { loadConfig } from "../dist/core/policy.js";
+import { scan, scanSkillRoot } from "../dist/core/scan.js";
+import { scoreFindings } from "../dist/core/scoring.js";
 import { renderReport } from "../dist/report/render.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -53,6 +56,117 @@ describe("SkillPreflight scanner", () => {
     assert.ok(report.findings.some((finding) => finding.id === "mcp.hardcoded-secret-env"));
   });
 
+  it("detects hidden Unicode controls", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "skill-preflight-unicode-"));
+
+    try {
+      await writeFile(
+        path.join(tempRoot, "SKILL.md"),
+        "---\nname: hidden-text\ndescription: Test hidden text\n---\nVisible \u202Ehidden\n",
+        "utf8"
+      );
+      const report = await scanSkillRoot(tempRoot, "unicode");
+
+      assert.ok(report.findings.some((finding) => finding.id === "security.unicode-bidi-control"));
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("suppresses ignored rules while keeping an audit trail", async () => {
+    const report = await scanSkillRoot(path.join(projectRoot, "examples", "risky-skill"), "risky", {
+      ignoreRules: ["security.prompt-*"]
+    });
+
+    assert.equal(report.findings.some((finding) => finding.id === "security.prompt-injection"), false);
+    assert.ok(
+      report.suppressedFindings.some(({ finding }) => finding.id === "security.prompt-injection")
+    );
+  });
+
+  it("excludes target-relative path globs", async () => {
+    const report = await scan({
+      target: path.join(projectRoot, "examples"),
+      exclude: ["risky-skill/**"]
+    });
+
+    assert.equal(report.summary.count, 1);
+    assert.equal(report.reports[0].skillName, "safe-doc-review");
+    assert.deepEqual(report.policy.exclude, ["risky-skill/**"]);
+  });
+
+  it("loads and validates explicit JSON policy files", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "skill-preflight-config-"));
+    const configPath = path.join(tempRoot, "policy.json");
+
+    try {
+      await writeFile(
+        configPath,
+        JSON.stringify({
+          exclude: ["fixtures/**"],
+          ignoreRules: ["compatibility.*"],
+          failBelow: 72,
+          failOn: "high"
+        }),
+        "utf8"
+      );
+
+      assert.deepEqual(await loadConfig(configPath), {
+        exclude: ["fixtures/**"],
+        ignoreRules: ["compatibility.*"],
+        failBelow: 72,
+        failOn: "high"
+      });
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("counts repeated rule matches once when scoring", () => {
+    const finding = {
+      id: "security.repeated-test",
+      category: "security",
+      severity: "high",
+      title: "Repeated test",
+      description: "Repeated test",
+      recommendation: "Remove it",
+      scoreImpact: 8
+    };
+
+    assert.equal(scoreFindings([finding]).score, scoreFindings([finding, { ...finding, file: "second.txt" }]).score);
+  });
+
+  it("does not load oversized files into text analysis", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "skill-preflight-large-file-"));
+
+    try {
+      await writeFile(path.join(tempRoot, "SKILL.md"), "---\nname: large\ndescription: Test\n---\n", "utf8");
+      await writeFile(path.join(tempRoot, "large.bin"), Buffer.alloc(1024 * 1024 + 1, 65));
+      const files = await readSkillFiles(tempRoot);
+      const largeFile = files.files.find((file) => file.path === "large.bin");
+
+      assert.equal(largeFile?.isText, false);
+      assert.equal(files.textFiles.some((file) => file.path === "large.bin"), false);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("fails the CLI on a configured severity threshold", async () => {
+    await assert.rejects(
+      execFileAsync(
+        process.execPath,
+        ["dist/index.js", "scan", "examples/risky-skill", "--summary", "--fail-on", "critical"],
+        { cwd: projectRoot }
+      ),
+      (error) => {
+        assert.equal(error.code, 1);
+        assert.match(error.stderr, /critical severity or higher/);
+        return true;
+      }
+    );
+  });
+
   it("renders json and markdown reports", async () => {
     const skill = await scanSkillRoot(path.join(projectRoot, "examples", "good-skill"), "good");
     const report = {
@@ -63,8 +177,10 @@ describe("SkillPreflight scanner", () => {
         count: 1,
         averageScore: skill.score,
         minScore: skill.score,
-        highRiskCount: 0
-      }
+        highRiskCount: 0,
+        suppressedCount: 0
+      },
+      policy: { exclude: [], ignoreRules: [] }
     };
 
     const json = renderReport(report, "json");
@@ -84,8 +200,10 @@ describe("SkillPreflight scanner", () => {
         count: 1,
         averageScore: skill.score,
         minScore: skill.score,
-        highRiskCount: 1
-      }
+        highRiskCount: 1,
+        suppressedCount: 0
+      },
+      policy: { exclude: [], ignoreRules: [] }
     };
 
     const sarif = JSON.parse(renderReport(report, "sarif"));
@@ -111,11 +229,14 @@ describe("SkillPreflight scanner", () => {
         count: 2,
         averageScore: Math.round((good.score + risky.score) / 2),
         minScore: risky.score,
-        highRiskCount: 1
-      }
+        highRiskCount: 1,
+        suppressedCount: 0
+      },
+      policy: { exclude: [], ignoreRules: [] }
     };
 
     const text = renderReport(report, "text", { summary: true, top: 1 });
+    const fullText = renderReport(report, "text");
     const json = JSON.parse(renderReport(report, "json", { summary: true, top: 1 }));
 
     assert.match(text, /SkillPreflight Summary/);
@@ -123,6 +244,8 @@ describe("SkillPreflight scanner", () => {
     assert.match(text, new RegExp(risky.skillName));
     assert.match(text, /skills\/risky-skill/);
     assert.equal(text.includes(risky.rootPath), false);
+    assert.match(fullText, /Path: skills\/risky-skill/);
+    assert.equal(fullText.includes(risky.rootPath), false);
     assert.doesNotMatch(text, new RegExp(good.skillName));
     assert.equal(json.lowestScoringSkills.length, 1);
     assert.equal(json.lowestScoringSkills[0].skillName, risky.skillName);
@@ -140,8 +263,10 @@ describe("SkillPreflight scanner", () => {
         count: 1,
         averageScore: skill.score,
         minScore: skill.score,
-        highRiskCount: 0
-      }
+        highRiskCount: 0,
+        suppressedCount: 0
+      },
+      policy: { exclude: [], ignoreRules: [] }
     };
 
     assert.throws(() => renderReport(report, "sarif", { summary: true }), /not supported with SARIF/);

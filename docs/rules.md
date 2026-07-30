@@ -11,6 +11,14 @@ SkillPreflight uses static analysis only. It reads files but does not execute sk
 - Secret-like local data access, including `.env`, SSH keys, API keys, browser cookies, and login data.
 - Suspicious webhook, paste, and ad-hoc upload endpoints.
 - Prompt injection phrases that attempt to override system or developer instructions.
+- Bidirectional Unicode controls that can reorder visible instructions.
+- Hidden Unicode tag characters and unexpected zero-width characters.
+
+## Scoring Behavior
+
+Every matching location remains in the report, but a rule ID deducts points only once per skill. This prevents repeated copies of the same issue from exhausting a category score while preserving the full audit trail.
+
+Findings suppressed by an explicit policy do not deduct points. Reports retain the suppressed findings and their count.
 
 ## Dependency and Install Risk
 
