@@ -161,6 +161,13 @@ describe("SkillPreflight scanner", () => {
     assert.match(action, /elif \[ -z "\$SKILL_PREFLIGHT_CONFIG" \]; then\s+args\+=\(--fail-below "70"\)/);
   });
 
+  it("publishes npm only for full semantic version tags", async () => {
+    const workflow = await readFile(path.join(projectRoot, ".github", "workflows", "publish.yml"), "utf8");
+
+    assert.match(workflow, /tags:\s+- "v\*\.\*\.\*"/);
+    assert.doesNotMatch(workflow, /tags:\s+- "v\*"(?:\s|$)/);
+  });
+
   it("loads and validates explicit JSON policy files", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "skill-preflight-config-"));
     const configPath = path.join(tempRoot, "policy.json");
