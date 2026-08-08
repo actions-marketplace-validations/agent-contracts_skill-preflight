@@ -35,6 +35,13 @@ npx skill-preflight scan ./my-skill
 npx skill-preflight scan https://github.com/user/some-skill
 ```
 
+如果只想检查大型仓库中的一个 Skill，可以直接粘贴 GitHub 目录链接或 `SKILL.md` 文件链接：
+
+```bash
+npx skill-preflight scan https://github.com/user/skills/tree/main/skills/my-skill
+npx skill-preflight scan https://github.com/user/skills/blob/main/skills/my-skill/SKILL.md
+```
+
 扫描常见的本地 Skill 安装目录：
 
 ```bash
@@ -89,6 +96,8 @@ SkillPreflight 使用 100 分评分模型：
 | 兼容性 | 5 | 硬编码本地路径、系统相关假设、脆弱 shell 用法 |
 
 同一规则在多个文件中的命中仍会全部显示，但每个规则 ID 对单个 Skill 只扣分一次，避免大型仓库因为同类问题重复出现而被过度扣分。
+
+如果一个 Skill 目录中还包含其他 Skill，SkillPreflight 会分别报告每个 `SKILL.md`，并在父级评分中自动排除子 Skill 的文件，避免互相污染分数。
 
 评分示例：
 
@@ -176,10 +185,10 @@ jobs:
       - uses: agent-contracts/skill-preflight@v1
         with:
           target: "."
-          fail-below: "70"
-          fail-on: high
           config: skill-preflight.json
 ```
+
+未指定配置文件时，Action 默认在分数低于 70 时失败；指定 `config` 后会采用策略文件中的 `failBelow`，而显式填写的 `fail-below` 始终具有最高优先级。
 
 如果需要 GitHub Code Scanning，可以输出 SARIF：
 

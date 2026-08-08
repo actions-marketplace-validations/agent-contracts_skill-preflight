@@ -41,6 +41,8 @@ The scanner does not discover config files automatically. A policy must be selec
 
 CLI `--exclude` and `--ignore-rule` values are merged with the policy. CLI `--fail-below` and `--fail-on` values override policy gates.
 
+The GitHub Action follows the same precedence. If `config` is supplied and the `fail-below` input is omitted, the policy's `failBelow` value is preserved. With neither setting, the Action uses its default gate of 70.
+
 ## Suppression Visibility
 
 Suppressed findings do not reduce the score or trigger severity gates. They remain in JSON reports under `suppressedFindings`, and every report includes a suppressed finding count.

@@ -86,9 +86,9 @@ Use an explicit policy file when the repository contains generated fixtures or r
   with:
     target: "."
     config: skill-preflight.json
-    fail-below: "70"
-    fail-on: high
 ```
+
+When `config` is present and `fail-below` is omitted, the Action uses the policy's `failBelow` gate. Without a config or explicit input, it defaults to 70. An explicit `fail-below` input always overrides the policy.
 
 For small overrides, `exclude` and `ignore-rules` accept newline-separated values:
 

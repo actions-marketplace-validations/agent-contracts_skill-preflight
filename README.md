@@ -20,6 +20,13 @@ Scan a GitHub repository before installing it:
 npx skill-preflight scan https://github.com/user/some-skill
 ```
 
+Scan one skill inside a large repository by pasting its GitHub directory or `SKILL.md` URL:
+
+```bash
+npx skill-preflight scan https://github.com/user/skills/tree/main/skills/my-skill
+npx skill-preflight scan https://github.com/user/skills/blob/main/skills/my-skill/SKILL.md
+```
+
 Scan common local skill directories:
 
 ```bash
@@ -62,6 +69,8 @@ SkillPreflight uses a 100-point score:
 | Compatibility | 5 | Hardcoded local paths, OS-specific assumptions, fragile shell usage |
 
 Repeated locations for the same rule remain visible, but each rule ID deducts points only once per skill. This keeps large repositories from receiving a lower score merely because the same issue appears in several files.
+
+When one skill directory contains other skills, SkillPreflight reports each `SKILL.md` as a separate skill and excludes child-skill files from the parent score.
 
 ## CLI
 
@@ -142,10 +151,10 @@ jobs:
       - uses: agent-contracts/skill-preflight@v1
         with:
           target: "."
-          fail-below: "70"
-          fail-on: high
           config: skill-preflight.json
 ```
+
+Without a config, the Action fails below 70 by default. A policy file's `failBelow` value is used when `config` is provided; an explicit `fail-below` input overrides both.
 
 For GitHub code scanning, emit SARIF:
 

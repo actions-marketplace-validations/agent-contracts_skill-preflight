@@ -19,9 +19,9 @@ inputs:
     required: false
     default: ""
   fail-below:
-    description: Fail the workflow if any scanned skill scores below this value.
+    description: Fail the workflow if any scanned skill scores below this value. Defaults to 70 when no config is supplied.
     required: false
-    default: "70"
+    default: ""
   fail-on:
     description: Fail for findings at or above this severity.
     required: false
@@ -78,6 +78,8 @@ runs:
         args=(scan "$SKILL_PREFLIGHT_TARGET" --format "$SKILL_PREFLIGHT_FORMAT")
         if [ -n "$SKILL_PREFLIGHT_FAIL_BELOW" ]; then
           args+=(--fail-below "$SKILL_PREFLIGHT_FAIL_BELOW")
+        elif [ -z "$SKILL_PREFLIGHT_CONFIG" ]; then
+          args+=(--fail-below "70")
         fi
         if [ -n "$SKILL_PREFLIGHT_FAIL_ON" ]; then
           args+=(--fail-on "$SKILL_PREFLIGHT_FAIL_ON")

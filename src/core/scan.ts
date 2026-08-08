@@ -29,10 +29,13 @@ export async function scan(options: ScanOptions): Promise<ScanReport> {
       }
 
       for (const root of roots) {
+        const nestedSkillExcludes = roots
+          .filter((candidate) => isDescendantPath(root, candidate))
+          .map((candidate) => `${toTargetRelativePath(resolved.localPath, candidate)}/**`);
         const displayPath = path.relative(resolved.localPath, root).split(path.sep).join("/") || ".";
         const report = await scanSkillRoot(root, resolved.displayTarget, {
           basePath: resolved.localPath,
-          exclude,
+          exclude: uniqueStrings([...exclude, ...nestedSkillExcludes]),
           ignoreRules
         });
         report.displayPath = displayPath;
@@ -53,6 +56,20 @@ export async function scan(options: ScanOptions): Promise<ScanReport> {
       ignoreRules
     }
   };
+}
+
+function isDescendantPath(parentPath: string, candidatePath: string): boolean {
+  const relativePath = path.relative(parentPath, candidatePath);
+  return (
+    Boolean(relativePath) &&
+    relativePath !== ".." &&
+    !relativePath.startsWith(`..${path.sep}`) &&
+    !path.isAbsolute(relativePath)
+  );
+}
+
+function toTargetRelativePath(targetPath: string, candidatePath: string): string {
+  return path.relative(targetPath, candidatePath).split(path.sep).join("/");
 }
 
 export interface ScanSkillRootOptions {
