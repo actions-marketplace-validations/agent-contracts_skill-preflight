@@ -210,6 +210,14 @@ skill-preflight scan . --format sarif --out skill-preflight.sarif
 
 完整工作流请参考 `docs/github-action.md`。
 
+## 公开 Skill 基准报告
+
+2026 年 8 月，SkillPreflight 对一组固定到具体 commit 的 40 个公开 Agent Skill 进行了扫描。该样本平均分为 **80.8/100**，中位数为 **85.5/100**。
+
+![SkillPreflight 公开 Skill 基准报告](https://raw.githubusercontent.com/agent-contracts/skill-preflight/main/benchmarks/2026-08-public-skills/benchmark-summary.png)
+
+查看[可复现的完整基准报告](benchmarks/2026-08-public-skills/README.md)，可了解抽样方法、汇总结果、固定样本和原始 JSON/CSV 数据。这是一组便利样本，不代表整个生态的排名；静态分析结果仍需人工复核。
+
 ## 安全原则
 
 SkillPreflight 不会执行被扫描 Skill 里的脚本。超大文件只统计体积，不会整块载入文本分析。

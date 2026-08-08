@@ -176,6 +176,14 @@ skill-preflight scan . --format sarif --out skill-preflight.sarif
 
 See `docs/github-action.md` for the full workflow.
 
+## Public Benchmark
+
+In August 2026, SkillPreflight scanned a frozen, commit-pinned sample of 40 public agent skills. The sample averaged **80.8/100**, with a median score of **85.5/100**.
+
+![SkillPreflight public skill benchmark](https://raw.githubusercontent.com/agent-contracts/skill-preflight/main/benchmarks/2026-08-public-skills/benchmark-summary.png)
+
+Read the [reproducible benchmark report](benchmarks/2026-08-public-skills/README.md) for the methodology, aggregate findings, source snapshot, and raw JSON/CSV data. This convenience sample is not an ecosystem ranking, and static findings require manual review.
+
 ## Safety Principle
 
 SkillPreflight does not execute scripts inside scanned skills. It only reads files and performs static analysis. Oversized files are measured without being loaded into text analysis.

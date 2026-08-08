@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">SkillPreflight public agent skill benchmark</title>
+  <desc id="desc">Aggregate results for 40 successfully scanned public agent skills.</desc>
+  <style>
+    text { font-family: Inter, Segoe UI, Arial, sans-serif; fill: #171a21; letter-spacing: 0; }
+    .eyebrow { font-size: 18px; font-weight: 700; fill: #526171; }
+    .heading { font-size: 48px; font-weight: 760; }
+    .subhead { font-size: 21px; fill: #526171; }
+    .metric { font-size: 72px; font-weight: 780; }
+    .metric-label { font-size: 18px; font-weight: 650; fill: #526171; }
+    .section { font-size: 21px; font-weight: 720; }
+    .grade { font-size: 17px; font-weight: 750; }
+    .count { font-size: 17px; font-weight: 700; text-anchor: end; }
+    .foot { font-size: 15px; fill: #687583; }
+  </style>
+  <rect width="1280" height="720" fill="#f7f8fa"/>
+  <rect x="0" y="0" width="12" height="720" fill="#12a879"/>
+  <g transform="translate(72 58)">
+    <path d="M22 0 44 9v17c0 17-9 30-22 38C9 56 0 43 0 26V9L22 0Z" fill="#171a21"/>
+    <path d="m13 31 6 6 13-16" fill="none" stroke="#f7f8fa" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="62" y="27" class="section">SkillPreflight</text>
+    <text x="62" y="50" class="eyebrow">PUBLIC BENCHMARK / AUGUST 2026</text>
+  </g>
+  <text x="72" y="186" class="heading">What do public agent skills look like</text>
+  <text x="72" y="244" class="heading">before installation?</text>
+  <text x="72" y="287" class="subhead">A reproducible GitHub code-search sample, scanned with SkillPreflight 0.4.0.</text>
+  <line x1="72" y1="318" x2="1208" y2="318" stroke="#d8dce3"/>
+  <g transform="translate(72 362)">
+    <text x="0" y="0" class="metric-label">SKILLS SCANNED</text>
+    <text x="0" y="78" class="metric">40</text>
+    <text x="0" y="137" class="metric-label">AVERAGE SCORE</text>
+    <text x="0" y="215" class="metric">80.8<tspan font-size="30" fill="#687583"> / 100</tspan></text>
+    <text x="300" y="0" class="metric-label">MEDIAN SCORE</text>
+    <text x="300" y="78" class="metric">85.5<tspan font-size="30" fill="#687583"> / 100</tspan></text>
+    <text x="300" y="137" class="metric-label">REVIEW RECOMMENDED</text>
+    <text x="300" y="215" class="metric">2</text>
+  </g>
+  <text x="746" y="344" class="section">Grade distribution</text>
+  
+        <text x="746" y="367" class="grade">A</text>
+        <rect x="784" y="349" width="350" height="22" rx="3" fill="#e7e9ee"/>
+        <rect x="784" y="349" width="12" height="22" rx="3" fill="#0f9d73"/>
+        <text x="1180" y="367" class="count">1</text>
+        <text x="746" y="414" class="grade">B</text>
+        <rect x="784" y="396" width="350" height="22" rx="3" fill="#e7e9ee"/>
+        <rect x="784" y="396" width="350" height="22" rx="3" fill="#2878d0"/>
+        <text x="1180" y="414" class="count">29</text>
+        <text x="746" y="461" class="grade">C</text>
+        <rect x="784" y="443" width="350" height="22" rx="3" fill="#e7e9ee"/>
+        <rect x="784" y="443" width="60" height="22" rx="3" fill="#d99716"/>
+        <text x="1180" y="461" class="count">5</text>
+        <text x="746" y="508" class="grade">D</text>
+        <rect x="784" y="490" width="350" height="22" rx="3" fill="#e7e9ee"/>
+        <rect x="784" y="490" width="36" height="22" rx="3" fill="#df6a32"/>
+        <text x="1180" y="508" class="count">3</text>
+        <text x="746" y="555" class="grade">F</text>
+        <rect x="784" y="537" width="350" height="22" rx="3" fill="#e7e9ee"/>
+        <rect x="784" y="537" width="24" height="22" rx="3" fill="#cb3d4d"/>
+        <text x="1180" y="555" class="count">2</text>
+  <line x1="72" y1="646" x2="1208" y2="646" stroke="#d8dce3"/>
+  <text x="72" y="681" class="foot">Convenience sample, not an ecosystem ranking. Static findings require manual review.</text>
+  <text x="1208" y="681" text-anchor="end" class="foot">github.com/agent-contracts/skill-preflight</text>
+</svg>

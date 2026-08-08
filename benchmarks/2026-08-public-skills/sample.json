@@ -1,0 +1,347 @@
+{
+  "schemaVersion": 1,
+  "frozenAt": "2026-08-08T17:08:45.236Z",
+  "selection": {
+    "perQuery": 20,
+    "total": 40,
+    "rules": [
+      "Exact case-insensitive basename SKILL.md",
+      "Public, non-fork repositories",
+      "One skill per repository",
+      "First eligible GitHub code-search results per query",
+      "Each source URL pinned to the commit returned by GitHub"
+    ]
+  },
+  "searchGroups": [
+    {
+      "id": "claude-project-skills",
+      "query": "SKILL.md path:.claude/skills"
+    },
+    {
+      "id": "skills-directories",
+      "query": "SKILL.md path:skills"
+    }
+  ],
+  "items": [
+    {
+      "group": "claude-project-skills",
+      "repository": "quran/quran.com-frontend-next",
+      "repositoryUrl": "https://github.com/quran/quran.com-frontend-next",
+      "path": ".claude/skills/pdf/SKILL.md",
+      "commit": "aff1a035b09b66f28047b3216edcae4c5c949a49",
+      "url": "https://github.com/quran/quran.com-frontend-next/blob/aff1a035b09b66f28047b3216edcae4c5c949a49/.claude/skills/pdf/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "Automattic/wordpress-activitypub",
+      "repositoryUrl": "https://github.com/Automattic/wordpress-activitypub",
+      "path": ".claude/skills/pr/SKILL.md",
+      "commit": "f45c1e659b155ff3e5ee2dcae3aaa284cee0db52",
+      "url": "https://github.com/Automattic/wordpress-activitypub/blob/f45c1e659b155ff3e5ee2dcae3aaa284cee0db52/.claude/skills/pr/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "bernardladenthin/BitcoinAddressFinder",
+      "repositoryUrl": "https://github.com/bernardladenthin/BitcoinAddressFinder",
+      "path": ".claude/skills/tdd/SKILL.md",
+      "commit": "9fce73b6f6fb7a43a27101f0a002ef77070de4c1",
+      "url": "https://github.com/bernardladenthin/BitcoinAddressFinder/blob/9fce73b6f6fb7a43a27101f0a002ef77070de4c1/.claude/skills/tdd/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "regent-vcs/re_gent",
+      "repositoryUrl": "https://github.com/regent-vcs/re_gent",
+      "path": ".claude/skills/log/SKILL.md",
+      "commit": "359b264fa3bb804dbdf42ea792c759434873d325",
+      "url": "https://github.com/regent-vcs/re_gent/blob/359b264fa3bb804dbdf42ea792c759434873d325/.claude/skills/log/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "vchelaru/Gum",
+      "repositoryUrl": "https://github.com/vchelaru/Gum",
+      "path": ".claude/skills/tdd/SKILL.md",
+      "commit": "386544b8472149acb24d30c747312dcb5a40b103",
+      "url": "https://github.com/vchelaru/Gum/blob/386544b8472149acb24d30c747312dcb5a40b103/.claude/skills/tdd/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "kaininx/PlainTab",
+      "repositoryUrl": "https://github.com/kaininx/PlainTab",
+      "path": ".claude/skills/tdd/SKILL.md",
+      "commit": "955e53eb2f599d984997a492b98a822158279c3a",
+      "url": "https://github.com/kaininx/PlainTab/blob/955e53eb2f599d984997a492b98a822158279c3a/.claude/skills/tdd/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "kv0906/pm-kit",
+      "repositoryUrl": "https://github.com/kv0906/pm-kit",
+      "path": ".claude/skills/gws/SKILL.md",
+      "commit": "2cb5d9f29bcf06056755b3b3ca15582efecfe4a0",
+      "url": "https://github.com/kv0906/pm-kit/blob/2cb5d9f29bcf06056755b3b3ca15582efecfe4a0/.claude/skills/gws/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "Hello-QM/catgo-LRG",
+      "repositoryUrl": "https://github.com/Hello-QM/catgo-LRG",
+      "path": ".claude/skills/qe/SKILL.md",
+      "commit": "a44648a48388d945916466ac5ac36341ecacb56f",
+      "url": "https://github.com/Hello-QM/catgo-LRG/blob/a44648a48388d945916466ac5ac36341ecacb56f/.claude/skills/qe/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "KjellKod/quest",
+      "repositoryUrl": "https://github.com/KjellKod/quest",
+      "path": ".claude/skills/gpt/SKILL.md",
+      "commit": "45490237dcdb7263e6547dd094116643572a0af4",
+      "url": "https://github.com/KjellKod/quest/blob/45490237dcdb7263e6547dd094116643572a0af4/.claude/skills/gpt/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "jellyrock/jellyrock",
+      "repositoryUrl": "https://github.com/jellyrock/jellyrock",
+      "path": ".claude/skills/ramp/SKILL.md",
+      "commit": "0250d9f801573a6a9778dbdcd57de3a0ff0f0dd9",
+      "url": "https://github.com/jellyrock/jellyrock/blob/0250d9f801573a6a9778dbdcd57de3a0ff0f0dd9/.claude/skills/ramp/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "baekenough/oh-my-customcode",
+      "repositoryUrl": "https://github.com/baekenough/oh-my-customcode",
+      "path": ".claude/skills/sdd/SKILL.md",
+      "commit": "038ec5b28af81b6233b945b439b9ecb71e34f4fd",
+      "url": "https://github.com/baekenough/oh-my-customcode/blob/038ec5b28af81b6233b945b439b9ecb71e34f4fd/.claude/skills/sdd/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "solanabr/solana-vault-standard",
+      "repositoryUrl": "https://github.com/solanabr/solana-vault-standard",
+      "path": ".claude/skills/SKILL.md",
+      "commit": "ceb54f34b683404f51459538777b85695018b28f",
+      "url": "https://github.com/solanabr/solana-vault-standard/blob/ceb54f34b683404f51459538777b85695018b28f/.claude/skills/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "nytodev/inertia-bundle",
+      "repositoryUrl": "https://github.com/nytodev/inertia-bundle",
+      "path": ".claude/skills/tdd/SKILL.md",
+      "commit": "669aefc1a94d4ce49d6b6298ea196598d6a294e5",
+      "url": "https://github.com/nytodev/inertia-bundle/blob/669aefc1a94d4ce49d6b6298ea196598d6a294e5/.claude/skills/tdd/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "G-Core/product-documentation",
+      "repositoryUrl": "https://github.com/G-Core/product-documentation",
+      "path": ".claude/skills/pr/SKILL.md",
+      "commit": "8b359388ae6cffb164d4b1926b0ad17f414fafbc",
+      "url": "https://github.com/G-Core/product-documentation/blob/8b359388ae6cffb164d4b1926b0ad17f414fafbc/.claude/skills/pr/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "Walrus-Computing/piper-draw",
+      "repositoryUrl": "https://github.com/Walrus-Computing/piper-draw",
+      "path": ".claude/skills/qa/SKILL.md",
+      "commit": "a35901261e28d21fae022d47fd51a467e138459b",
+      "url": "https://github.com/Walrus-Computing/piper-draw/blob/a35901261e28d21fae022d47fd51a467e138459b/.claude/skills/qa/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "liatrio/liatrio-otel-collector",
+      "repositoryUrl": "https://github.com/liatrio/liatrio-otel-collector",
+      "path": ".claude/skills/fix/SKILL.md",
+      "commit": "ee43f06d587b712b7f59e3ff01964bcdb6c92f60",
+      "url": "https://github.com/liatrio/liatrio-otel-collector/blob/ee43f06d587b712b7f59e3ff01964bcdb6c92f60/.claude/skills/fix/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "arun-gupta/agentic-tictactoe",
+      "repositoryUrl": "https://github.com/arun-gupta/agentic-tictactoe",
+      "path": ".claude/skills/si/SKILL.md",
+      "commit": "5ff1feef9528b595c9d1fa33bc9a5cb79096fee7",
+      "url": "https://github.com/arun-gupta/agentic-tictactoe/blob/5ff1feef9528b595c9d1fa33bc9a5cb79096fee7/.claude/skills/si/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "phatblat/dotfiles",
+      "repositoryUrl": "https://github.com/phatblat/dotfiles",
+      "path": ".claude/skills/qa/SKILL.md",
+      "commit": "6651f747bc9fb843970d078d5f3acfcab63c23d5",
+      "url": "https://github.com/phatblat/dotfiles/blob/6651f747bc9fb843970d078d5f3acfcab63c23d5/.claude/skills/qa/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "adam-s/intercept",
+      "repositoryUrl": "https://github.com/adam-s/intercept",
+      "path": ".claude/skills/app/SKILL.md",
+      "commit": "6451b89400d5b5de5bb1d9b9befe3ba09fb965ef",
+      "url": "https://github.com/adam-s/intercept/blob/6451b89400d5b5de5bb1d9b9befe3ba09fb965ef/.claude/skills/app/SKILL.md"
+    },
+    {
+      "group": "claude-project-skills",
+      "repository": "I194/PMTools_2.0",
+      "repositoryUrl": "https://github.com/I194/PMTools_2.0",
+      "path": ".claude/skills/qa/SKILL.md",
+      "commit": "9d99cf8c192e4cabf2c81d4eb6f6996e263733f8",
+      "url": "https://github.com/I194/PMTools_2.0/blob/9d99cf8c192e4cabf2c81d4eb6f6996e263733f8/.claude/skills/qa/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "SkeneTechnologies/skene",
+      "repositoryUrl": "https://github.com/SkeneTechnologies/skene",
+      "path": "skills/SKILL.md",
+      "commit": "e2173a9e5fbbed3e9e6380d989766b233346b2f9",
+      "url": "https://github.com/SkeneTechnologies/skene/blob/e2173a9e5fbbed3e9e6380d989766b233346b2f9/skills/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "xmtplabs/xmtp-agent-examples",
+      "repositoryUrl": "https://github.com/xmtplabs/xmtp-agent-examples",
+      "path": "skills/SKILL.md",
+      "commit": "8116b7fbd4bde327c06a51ec15defe8046be1953",
+      "url": "https://github.com/xmtplabs/xmtp-agent-examples/blob/8116b7fbd4bde327c06a51ec15defe8046be1953/skills/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "Achuan-2/siyuan-plugin-task-note-management",
+      "repositoryUrl": "https://github.com/Achuan-2/siyuan-plugin-task-note-management",
+      "path": "skills/SKILL.md",
+      "commit": "f8d1804c616086c113e0f1d7196ea819ef3c0920",
+      "url": "https://github.com/Achuan-2/siyuan-plugin-task-note-management/blob/f8d1804c616086c113e0f1d7196ea819ef3c0920/skills/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "runtsang/RebuttalStudio",
+      "repositoryUrl": "https://github.com/runtsang/RebuttalStudio",
+      "path": "skills/SKILL.md",
+      "commit": "1f81e2f0aeccd582df2f5f84dfb3c17da5189599",
+      "url": "https://github.com/runtsang/RebuttalStudio/blob/1f81e2f0aeccd582df2f5f84dfb3c17da5189599/skills/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "nirholas/PAI",
+      "repositoryUrl": "https://github.com/nirholas/PAI",
+      "path": "skills/SKILL.md",
+      "commit": "7a1df14e4a99c832f20378c11e309a4880a6181f",
+      "url": "https://github.com/nirholas/PAI/blob/7a1df14e4a99c832f20378c11e309a4880a6181f/skills/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "0x-Shashi/WEB3-AUDIT-SKILLS",
+      "repositoryUrl": "https://github.com/0x-Shashi/WEB3-AUDIT-SKILLS",
+      "path": "skills/SKILL.md",
+      "commit": "4c0e3b9d17436fa2f7ae709ba1c78c075a20c301",
+      "url": "https://github.com/0x-Shashi/WEB3-AUDIT-SKILLS/blob/4c0e3b9d17436fa2f7ae709ba1c78c075a20c301/skills/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "QuTone/LightStim",
+      "repositoryUrl": "https://github.com/QuTone/LightStim",
+      "path": "skills/SKILL.md",
+      "commit": "8698235ff2caf37f50bdbb57c5939195a1027ff0",
+      "url": "https://github.com/QuTone/LightStim/blob/8698235ff2caf37f50bdbb57c5939195a1027ff0/skills/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "jralvarenga/better-translate",
+      "repositoryUrl": "https://github.com/jralvarenga/better-translate",
+      "path": "skills/SKILL.md",
+      "commit": "28b1300f40d3590bc4f16df25aab5aac95f8f6f4",
+      "url": "https://github.com/jralvarenga/better-translate/blob/28b1300f40d3590bc4f16df25aab5aac95f8f6f4/skills/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "IceWhaleTech/ToolFS",
+      "repositoryUrl": "https://github.com/IceWhaleTech/ToolFS",
+      "path": "skills/SKILL.md",
+      "commit": "d2f89ad0533d44a5658a8c72802325960e9790bf",
+      "url": "https://github.com/IceWhaleTech/ToolFS/blob/d2f89ad0533d44a5658a8c72802325960e9790bf/skills/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "taco-devs/clawkeep",
+      "repositoryUrl": "https://github.com/taco-devs/clawkeep",
+      "path": "skills/SKILL.md",
+      "commit": "b5a73500b234d0c5db1d62a6d74f3978687a2324",
+      "url": "https://github.com/taco-devs/clawkeep/blob/b5a73500b234d0c5db1d62a6d74f3978687a2324/skills/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "alienzhou/skill-reviewer",
+      "repositoryUrl": "https://github.com/alienzhou/skill-reviewer",
+      "path": "skills/SKILL.md",
+      "commit": "12107a9abbd26d7083cb1a4421f5c65295640633",
+      "url": "https://github.com/alienzhou/skill-reviewer/blob/12107a9abbd26d7083cb1a4421f5c65295640633/skills/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "pinax-network/pinax-api",
+      "repositoryUrl": "https://github.com/pinax-network/pinax-api",
+      "path": "skills/SKILL.md",
+      "commit": "af56ff26110bc7c7eb4ec57ad611fee3b36298d4",
+      "url": "https://github.com/pinax-network/pinax-api/blob/af56ff26110bc7c7eb4ec57ad611fee3b36298d4/skills/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "amurthygithub/Audit-skills",
+      "repositoryUrl": "https://github.com/amurthygithub/Audit-skills",
+      "path": "skills/SKILL.md",
+      "commit": "db636b14a4d553001a4ff66dad96334b63bf7628",
+      "url": "https://github.com/amurthygithub/Audit-skills/blob/db636b14a4d553001a4ff66dad96334b63bf7628/skills/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "saker-ai/skillhub",
+      "repositoryUrl": "https://github.com/saker-ai/skillhub",
+      "path": "skills/SKILL.md",
+      "commit": "372ce95c88f359f1ea752e0428c1d411376f2ac6",
+      "url": "https://github.com/saker-ai/skillhub/blob/372ce95c88f359f1ea752e0428c1d411376f2ac6/skills/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "cangjielanguage-sig/ACEHarness",
+      "repositoryUrl": "https://github.com/cangjielanguage-sig/ACEHarness",
+      "path": "skills/SKILL.md",
+      "commit": "69688b1493be7d492ab59ed93da0105261a356b8",
+      "url": "https://github.com/cangjielanguage-sig/ACEHarness/blob/69688b1493be7d492ab59ed93da0105261a356b8/skills/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "thought-analyzer/thought-analyzer",
+      "repositoryUrl": "https://github.com/thought-analyzer/thought-analyzer",
+      "path": "skills/skill.md",
+      "commit": "463bbf4898eaf440065500706139b0216d7cad2e",
+      "url": "https://github.com/thought-analyzer/thought-analyzer/blob/463bbf4898eaf440065500706139b0216d7cad2e/skills/skill.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "greenzorro/project-manager",
+      "repositoryUrl": "https://github.com/greenzorro/project-manager",
+      "path": "skills/SKILL.md",
+      "commit": "0d2c4905a6ce9c0d9c37bb4869712561df9b9533",
+      "url": "https://github.com/greenzorro/project-manager/blob/0d2c4905a6ce9c0d9c37bb4869712561df9b9533/skills/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "Azhi-ss/html-effectiveness",
+      "repositoryUrl": "https://github.com/Azhi-ss/html-effectiveness",
+      "path": "skills/SKILL.md",
+      "commit": "56d644dfa4fe1467fad55351e3bf6c4a1b48da43",
+      "url": "https://github.com/Azhi-ss/html-effectiveness/blob/56d644dfa4fe1467fad55351e3bf6c4a1b48da43/skills/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "DegenApeDev/AlleyBot",
+      "repositoryUrl": "https://github.com/DegenApeDev/AlleyBot",
+      "path": "skills/SKILL.md",
+      "commit": "6d2aba7a7fbdaae978e6fe74b9c140fe3af31fca",
+      "url": "https://github.com/DegenApeDev/AlleyBot/blob/6d2aba7a7fbdaae978e6fe74b9c140fe3af31fca/skills/SKILL.md"
+    },
+    {
+      "group": "skills-directories",
+      "repository": "JKc66/custom-icons-skill",
+      "repositoryUrl": "https://github.com/JKc66/custom-icons-skill",
+      "path": "skills/SKILL.md",
+      "commit": "626d4a16bb3e98ba4e8575c5e3dad1ff7c798e50",
+      "url": "https://github.com/JKc66/custom-icons-skill/blob/626d4a16bb3e98ba4e8575c5e3dad1ff7c798e50/skills/SKILL.md"
+    }
+  ]
+}

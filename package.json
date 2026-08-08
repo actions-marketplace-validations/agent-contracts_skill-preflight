@@ -15,6 +15,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "benchmark:public": "npm run build && node scripts/benchmark-public-skills.mjs",
     "dev": "npm run build && node dist/index.js",
     "test": "npm run build && node --test test/scan.test.mjs",
     "scan:good": "npm run build && node dist/index.js scan examples/good-skill",
