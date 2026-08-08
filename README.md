@@ -1,10 +1,20 @@
 # SkillPreflight
 
+![SkillPreflight social preview](https://raw.githubusercontent.com/agent-contracts/skill-preflight/main/assets/skill-preflight-social.png)
+
+[![npm version](https://img.shields.io/npm/v/skill-preflight?color=16a34a)](https://www.npmjs.com/package/skill-preflight)
+[![npm downloads](https://img.shields.io/npm/dm/skill-preflight?color=0891b2)](https://www.npmjs.com/package/skill-preflight)
+[![CI](https://github.com/agent-contracts/skill-preflight/actions/workflows/ci.yml/badge.svg)](https://github.com/agent-contracts/skill-preflight/actions/workflows/ci.yml)
+[![GitHub Marketplace](https://img.shields.io/badge/GitHub%20Marketplace-SkillPreflight-2ea44f?logo=github)](https://github.com/marketplace/actions/skillpreflight)
+[![License](https://img.shields.io/github/license/agent-contracts/skill-preflight)](LICENSE)
+
 [English](README.md) | [简体中文](README.zh-CN.md)
 
 SkillPreflight is a pre-install safety, token, and maintainability scorecard for AI agent skills.
 
 It helps users decide whether a Codex, Claude Code, Cursor, Gemini CLI, or other agent skill is safe and lightweight enough to install.
+
+If SkillPreflight helps you vet a third-party skill, consider starring the repository so more users can discover safer pre-install checks.
 
 ## Quick Start
 
@@ -26,6 +36,8 @@ Scan one skill inside a large repository by pasting its GitHub directory or `SKI
 npx skill-preflight scan https://github.com/user/skills/tree/main/skills/my-skill
 npx skill-preflight scan https://github.com/user/skills/blob/main/skills/my-skill/SKILL.md
 ```
+
+![SkillPreflight CLI demo](https://raw.githubusercontent.com/agent-contracts/skill-preflight/main/assets/skill-preflight-demo.png)
 
 Scan common local skill directories:
 

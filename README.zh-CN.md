@@ -1,10 +1,20 @@
 # SkillPreflight
 
+![SkillPreflight 社交预览图](https://raw.githubusercontent.com/agent-contracts/skill-preflight/main/assets/skill-preflight-social.png)
+
+[![npm version](https://img.shields.io/npm/v/skill-preflight?color=16a34a)](https://www.npmjs.com/package/skill-preflight)
+[![npm downloads](https://img.shields.io/npm/dm/skill-preflight?color=0891b2)](https://www.npmjs.com/package/skill-preflight)
+[![CI](https://github.com/agent-contracts/skill-preflight/actions/workflows/ci.yml/badge.svg)](https://github.com/agent-contracts/skill-preflight/actions/workflows/ci.yml)
+[![GitHub Marketplace](https://img.shields.io/badge/GitHub%20Marketplace-SkillPreflight-2ea44f?logo=github)](https://github.com/marketplace/actions/skillpreflight)
+[![License](https://img.shields.io/github/license/agent-contracts/skill-preflight)](LICENSE)
+
 [English](README.md) | [简体中文](README.zh-CN.md)
 
 SkillPreflight 是一个面向 AI Agent Skill 的安装前安全、Token 和可维护性评分工具。
 
 它可以帮助用户在安装 Codex、Claude Code、Cursor、Gemini CLI 或其他智能体 Skill 之前，先判断这个 Skill 是否安全、轻量、清晰，并且是否值得安装。
+
+如果 SkillPreflight 帮助你检查了第三方 Skill，欢迎为项目点一个 Star，让更多用户在安装前先看清风险。
 
 ## 为什么需要 SkillPreflight？
 
@@ -41,6 +51,8 @@ npx skill-preflight scan https://github.com/user/some-skill
 npx skill-preflight scan https://github.com/user/skills/tree/main/skills/my-skill
 npx skill-preflight scan https://github.com/user/skills/blob/main/skills/my-skill/SKILL.md
 ```
+
+![SkillPreflight CLI 演示](https://raw.githubusercontent.com/agent-contracts/skill-preflight/main/assets/skill-preflight-demo.png)
 
 扫描常见的本地 Skill 安装目录：
 
