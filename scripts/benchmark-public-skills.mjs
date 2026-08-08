@@ -479,7 +479,7 @@ function renderSummarySvg(report) {
     <text x="300" y="215" class="metric">${aggregate.highRiskCount}</text>
   </g>
   <text x="746" y="344" class="section">Grade distribution</text>
-  ${bars}
+  ${bars.trimStart()}
   <line x1="72" y1="646" x2="1208" y2="646" stroke="#d8dce3"/>
   <text x="72" y="681" class="foot">Convenience sample, not an ecosystem ranking. Static findings require manual review.</text>
   <text x="1208" y="681" text-anchor="end" class="foot">github.com/agent-contracts/skill-preflight</text>

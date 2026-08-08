@@ -36,8 +36,7 @@
     <text x="300" y="215" class="metric">2</text>
   </g>
   <text x="746" y="344" class="section">Grade distribution</text>
-  
-        <text x="746" y="367" class="grade">A</text>
+  <text x="746" y="367" class="grade">A</text>
         <rect x="784" y="349" width="350" height="22" rx="3" fill="#e7e9ee"/>
         <rect x="784" y="349" width="12" height="22" rx="3" fill="#0f9d73"/>
         <text x="1180" y="367" class="count">1</text>
