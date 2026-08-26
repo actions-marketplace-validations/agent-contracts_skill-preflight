@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/agent-contracts/skill-preflight/main/assets/skill-preflight-avatar.png" width="160" alt="SkillPreflight 盾牌与评分环标志">
+</p>
+
 # SkillPreflight
 
 ![SkillPreflight 社交预览图](https://raw.githubusercontent.com/agent-contracts/skill-preflight/main/assets/skill-preflight-social.png)

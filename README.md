@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/agent-contracts/skill-preflight/main/assets/skill-preflight-avatar.png" width="160" alt="SkillPreflight shield and score ring logo">
+</p>
+
 # SkillPreflight
 
 ![SkillPreflight social preview](https://raw.githubusercontent.com/agent-contracts/skill-preflight/main/assets/skill-preflight-social.png)
