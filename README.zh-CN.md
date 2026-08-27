@@ -128,6 +128,12 @@ shell-super-agent: 25/100 (F) - High risk, do not install blindly
 skill-preflight scan <target>
 ```
 
+查看规则目录以及 `--ignore-rule` 可使用的规则 ID：
+
+```bash
+skill-preflight rules
+```
+
 常用参数：
 
 ```text

@@ -168,7 +168,8 @@ function buildMetrics(
 }
 
 function deriveSkillName(rootPath: string, skillContent = ""): string {
-  const nameMatch = skillContent.match(/(^|\n)name\s*:\s*["']?([^"'\n]+)["']?/i);
+  const frontmatterMatch = skillContent.match(/^---\s*\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
+  const nameMatch = frontmatterMatch?.[1]?.match(/(^|\n)name\s*:\s*["']?([^"'\n]+)["']?/i);
   return nameMatch?.[2]?.trim() || path.basename(rootPath);
 }
 

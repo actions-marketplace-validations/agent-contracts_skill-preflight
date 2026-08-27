@@ -94,6 +94,12 @@ When one skill directory contains other skills, SkillPreflight reports each `SKI
 skill-preflight scan <target>
 ```
 
+Print the rule catalog and the IDs accepted by `--ignore-rule`:
+
+```bash
+skill-preflight rules
+```
+
 Options:
 
 ```text

@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { Command } from "commander";
@@ -46,6 +46,14 @@ export async function runCli(argv: string[]): Promise<void> {
     .name("skill-preflight")
     .description("Pre-install safety, token, and maintainability scorecard for AI agent skills.")
     .version(packageMetadata.version);
+
+  program
+    .command("rules")
+    .description("Print the rule catalog and rule IDs used by --ignore-rule")
+    .action(async () => {
+      const catalog = await readFile(new URL("../docs/rules.md", import.meta.url), "utf8");
+      process.stdout.write(catalog.endsWith("\n") ? catalog : `${catalog}\n`);
+    });
 
   program
     .command("scan")

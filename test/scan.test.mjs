@@ -82,6 +82,154 @@ describe("SkillPreflight scanner", () => {
     assert.ok(report.findings.some((finding) => finding.id === "mcp.hardcoded-secret-env"));
   });
 
+  it("accepts bounded Node dependency ranges when a lockfile is present", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "skill-preflight-node-lock-"));
+
+    try {
+      await writeFile(
+        path.join(tempRoot, "SKILL.md"),
+        "---\nname: locked-node-skill\ndescription: Test locked dependencies\n---\nReview text only.\n",
+        "utf8"
+      );
+      await writeFile(
+        path.join(tempRoot, "package.json"),
+        JSON.stringify({ dependencies: { commander: "^12.1.0", undici: "~6.28.0" } }),
+        "utf8"
+      );
+      await writeFile(path.join(tempRoot, "package-lock.json"), "{}\n", "utf8");
+
+      const report = await scanSkillRoot(tempRoot, "locked-node");
+      assert.equal(
+        report.findings.some((finding) => finding.id === "dependencies.node-loose-version"),
+        false
+      );
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("still flags wildcard Node dependencies when a lockfile is present", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "skill-preflight-node-wildcard-"));
+
+    try {
+      await writeFile(
+        path.join(tempRoot, "SKILL.md"),
+        "---\nname: wildcard-node-skill\ndescription: Test wildcard dependencies\n---\nReview text only.\n",
+        "utf8"
+      );
+      await writeFile(
+        path.join(tempRoot, "package.json"),
+        JSON.stringify({ dependencies: { "left-pad": "*" } }),
+        "utf8"
+      );
+      await writeFile(path.join(tempRoot, "package-lock.json"), "{}\n", "utf8");
+
+      const report = await scanSkillRoot(tempRoot, "wildcard-node");
+      assert.ok(report.findings.some((finding) => finding.id === "dependencies.node-loose-version"));
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("distinguishes MCP environment references from hardcoded secrets", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "skill-preflight-mcp-env-"));
+    const configPath = path.join(tempRoot, ".mcp.json");
+
+    try {
+      await writeFile(
+        path.join(tempRoot, "SKILL.md"),
+        "---\nname: mcp-env-skill\ndescription: Test environment references\n---\nReview text only.\n",
+        "utf8"
+      );
+      await writeFile(
+        configPath,
+        JSON.stringify({
+          mcpServers: {
+            safe: {
+              command: "node",
+              args: ["server.js"],
+              env: { API_KEY: "${API_KEY}", TOKEN: "$env:TOKEN", PASSWORD: "%PASSWORD%" }
+            }
+          }
+        }),
+        "utf8"
+      );
+
+      const safeReport = await scanSkillRoot(tempRoot, "mcp-env");
+      assert.equal(
+        safeReport.findings.some((finding) => finding.id === "mcp.hardcoded-secret-env"),
+        false
+      );
+
+      await writeFile(
+        configPath,
+        JSON.stringify({
+          mcpServers: {
+            unsafe: { command: "node", args: ["server.js"], env: { API_KEY: "sk-live-secret" } }
+          }
+        }),
+        "utf8"
+      );
+      const unsafeReport = await scanSkillRoot(tempRoot, "mcp-env");
+      assert.ok(unsafeReport.findings.some((finding) => finding.id === "mcp.hardcoded-secret-env"));
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("classifies local Node dependency specs as compatibility findings", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "skill-preflight-node-local-"));
+
+    try {
+      await writeFile(
+        path.join(tempRoot, "SKILL.md"),
+        "---\nname: local-node-skill\ndescription: Test local dependency\n---\nReview text only.\n",
+        "utf8"
+      );
+      await writeFile(
+        path.join(tempRoot, "package.json"),
+        JSON.stringify({ dependencies: { helper: "file:../helper" } }),
+        "utf8"
+      );
+      await writeFile(path.join(tempRoot, "package-lock.json"), "{}\n", "utf8");
+
+      const report = await scanSkillRoot(tempRoot, "local-node");
+      const finding = report.findings.find((item) => item.id === "dependencies.node-local-spec");
+
+      assert.equal(finding?.category, "compatibility");
+      assert.equal(report.findings.some((item) => item.id === "dependencies.node-remote-spec"), false);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("derives skill names only from YAML frontmatter", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "skill-preflight-skill-name-"));
+
+    try {
+      await writeFile(
+        path.join(tempRoot, "SKILL.md"),
+        "# Notes\n\nThe example payload contains:\nname: misleading-body-value\n",
+        "utf8"
+      );
+
+      const report = await scanSkillRoot(tempRoot, "skill-name");
+      assert.equal(report.skillName, path.basename(tempRoot));
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("prints the rule catalog from the CLI", async () => {
+    const { stdout } = await execFileAsync(process.execPath, ["dist/index.js", "rules"], {
+      cwd: projectRoot
+    });
+
+    assert.match(stdout, /security\.remote-script-execution/);
+    assert.match(stdout, /dependencies\.node-local-spec/);
+    assert.match(stdout, /mcp\.hardcoded-secret-env/);
+  });
+
   it("detects hidden Unicode controls", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "skill-preflight-unicode-"));
 
