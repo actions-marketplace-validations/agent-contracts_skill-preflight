@@ -1,6 +1,6 @@
 {
   "name": "skill-preflight",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Pre-install safety, token, and maintainability scorecard for AI agent skills.",
   "type": "module",
   "bin": {
@@ -20,6 +20,7 @@
     "benchmark:public": "npm run build && node scripts/benchmark-public-skills.mjs",
     "dev": "npm run build && node dist/index.js",
     "test": "npm run build && node --test test/scan.test.mjs",
+    "test:coverage": "npm run build && node --experimental-test-coverage --test test/scan.test.mjs",
     "scan:good": "npm run build && node dist/index.js scan examples/good-skill",
     "scan:risky": "npm run build && node dist/index.js scan examples/risky-skill",
     "prepack": "npm run build"

@@ -1,4 +1,9 @@
+import { createRequire } from "node:module";
 import type { Finding, ScanReport, SkillReport } from "../core/types.js";
+
+const require = createRequire(import.meta.url);
+const packageMetadata = require("../../package.json") as { version: string };
+const REPORT_SCHEMA_VERSION = 1;
 
 export type ReportFormat = "text" | "json" | "markdown" | "html" | "sarif";
 
@@ -32,7 +37,7 @@ export function renderReport(
 
   switch (format) {
     case "json":
-      return `${JSON.stringify(report, null, 2)}\n`;
+      return renderJson(report);
     case "markdown":
       return renderMarkdown(report);
     case "html":
@@ -42,6 +47,22 @@ export function renderReport(
     case "text":
       return renderText(report);
   }
+}
+
+function renderJson(report: ScanReport): string {
+  return `${JSON.stringify(
+    {
+      schemaVersion: REPORT_SCHEMA_VERSION,
+      tool: reportTool(),
+      generatedAt: report.generatedAt,
+      target: report.target,
+      reports: report.reports.map(publicSkillReport),
+      summary: report.summary,
+      policy: report.policy
+    },
+    null,
+    2
+  )}\n`;
 }
 
 function renderSummaryText(report: ScanReport, top: number): string {
@@ -76,6 +97,8 @@ function renderSummaryText(report: ScanReport, top: number): string {
 function renderSummaryJson(report: ScanReport, top: number): string {
   return `${JSON.stringify(
     {
+      schemaVersion: REPORT_SCHEMA_VERSION,
+      tool: reportTool(),
       generatedAt: report.generatedAt,
       target: report.target,
       summary: report.summary,
@@ -428,6 +451,8 @@ function renderSarif(report: ScanReport): string {
           tool: {
             driver: {
               name: "SkillPreflight",
+              version: packageMetadata.version,
+              semanticVersion: packageMetadata.version,
               informationUri: "https://github.com/agent-contracts/skill-preflight",
               rules
             }
@@ -450,6 +475,21 @@ function renderSarif(report: ScanReport): string {
     null,
     2
   )}\n`;
+}
+
+function publicSkillReport(skill: SkillReport): Omit<SkillReport, "rootPath" | "displayPath"> & { path: string } {
+  const { rootPath: _rootPath, displayPath: _displayPath, ...publicReport } = skill;
+  return {
+    ...publicReport,
+    path: displaySkillPath(skill)
+  };
+}
+
+function reportTool(): { name: "SkillPreflight"; version: string } {
+  return {
+    name: "SkillPreflight",
+    version: packageMetadata.version
+  };
 }
 
 function renderSkillHtml(skill: SkillReport): string {
@@ -509,7 +549,7 @@ function highRiskFindingCount(skill: SkillReport): number {
 }
 
 function displaySkillPath(skill: SkillReport): string {
-  return skill.displayPath ?? skill.rootPath;
+  return skill.displayPath ?? ".";
 }
 
 function suppressedCount(report: ScanReport): number {

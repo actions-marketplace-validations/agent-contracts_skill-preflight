@@ -156,6 +156,8 @@ The badge payload can be served through a static endpoint or GitHub Pages:
 }
 ```
 
+JSON scan reports include a schema version, the SkillPreflight version, and portable per-skill paths. Internal absolute and temporary paths are omitted. See the [JSON report schema](docs/report-schema.md).
+
 ## GitHub Action
 
 After the package is published to npm and the repository is tagged, skill authors can scan every PR:

@@ -10,7 +10,7 @@ import { parseGitHubUrl, readSkillFiles } from "../dist/core/filesystem.js";
 import { loadConfig } from "../dist/core/policy.js";
 import { scan, scanSkillRoot } from "../dist/core/scan.js";
 import { scoreFindings } from "../dist/core/scoring.js";
-import { renderReport } from "../dist/report/render.js";
+import { parseFormat, renderReport } from "../dist/report/render.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, "..");
@@ -390,6 +390,7 @@ describe("SkillPreflight scanner", () => {
 
   it("renders json and markdown reports", async () => {
     const skill = await scanSkillRoot(path.join(projectRoot, "examples", "good-skill"), "good");
+    const packageMetadata = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
     const report = {
       generatedAt: "2026-06-05T00:00:00.000Z",
       target: "good",
@@ -405,14 +406,24 @@ describe("SkillPreflight scanner", () => {
     };
 
     const json = renderReport(report, "json");
+    const parsedJson = JSON.parse(json);
     const markdown = renderReport(report, "markdown");
 
-    assert.equal(JSON.parse(json).reports[0].skillName, "safe-doc-review");
+    assert.equal(parsedJson.schemaVersion, 1);
+    assert.deepEqual(parsedJson.tool, { name: "SkillPreflight", version: packageMetadata.version });
+    assert.equal(parsedJson.reports[0].skillName, "safe-doc-review");
+    assert.equal(parsedJson.reports[0].path, ".");
+    assert.equal(parsedJson.reports[0].rootPath, undefined);
+    assert.equal(parsedJson.reports[0].displayPath, undefined);
+    assert.equal(json.includes(skill.rootPath), false);
     assert.match(markdown, /SkillPreflight Report/);
+    assert.match(markdown, /\*\*Path:\*\* `\.`/);
+    assert.equal(markdown.includes(skill.rootPath), false);
   });
 
   it("renders SARIF for code scanning integrations", async () => {
     const skill = await scanSkillRoot(path.join(projectRoot, "examples", "risky-skill"), "risky");
+    const packageMetadata = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
     const report = {
       generatedAt: "2026-06-05T00:00:00.000Z",
       target: "risky",
@@ -431,7 +442,50 @@ describe("SkillPreflight scanner", () => {
 
     assert.equal(sarif.version, "2.1.0");
     assert.equal(sarif.runs[0].tool.driver.name, "SkillPreflight");
+    assert.equal(sarif.runs[0].tool.driver.version, packageMetadata.version);
+    assert.equal(sarif.runs[0].tool.driver.semanticVersion, packageMetadata.version);
     assert.ok(sarif.runs[0].results.some((result) => result.ruleId === "security.remote-script-execution"));
+  });
+
+  it("escapes user-controlled values in HTML reports", async () => {
+    const skill = await scanSkillRoot(path.join(projectRoot, "examples", "good-skill"), "good");
+    const unsafeSkill = {
+      ...skill,
+      skillName: "<script>alert(1)</script>",
+      recommendation: '<img src=x onerror="alert(1)">',
+      displayPath: "skills/<unsafe>"
+    };
+    const report = {
+      generatedAt: "2026-06-05T00:00:00.000Z",
+      target: "<unsafe-target>",
+      reports: [unsafeSkill],
+      summary: {
+        count: 1,
+        averageScore: skill.score,
+        minScore: skill.score,
+        highRiskCount: 0,
+        suppressedCount: 0
+      },
+      policy: { exclude: [], ignoreRules: [] }
+    };
+
+    const html = renderReport(report, "html");
+    const summaryHtml = renderReport(report, "html", { summary: true, top: 1 });
+
+    assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+    assert.match(html, /&lt;img src=x onerror=&quot;alert\(1\)&quot;&gt;/);
+    assert.match(html, /skills\/&lt;unsafe&gt;/);
+    assert.equal(html.includes("<script>alert(1)</script>"), false);
+    assert.match(summaryHtml, /&lt;unsafe-target&gt;/);
+    assert.equal(summaryHtml.includes("<unsafe-target>"), false);
+  });
+
+  it("parses supported report formats and rejects unknown values", () => {
+    for (const format of ["text", "json", "markdown", "html", "sarif"]) {
+      assert.equal(parseFormat(format), format);
+    }
+
+    assert.throws(() => parseFormat("xml"), /Unsupported format: xml/);
   });
 
   it("renders compact summaries with lowest scores first", async () => {
@@ -471,6 +525,8 @@ describe("SkillPreflight scanner", () => {
     assert.equal(json.lowestScoringSkills.length, 1);
     assert.equal(json.lowestScoringSkills[0].skillName, risky.skillName);
     assert.equal(json.lowestScoringSkills[0].path, "skills/risky-skill");
+    assert.equal(json.schemaVersion, 1);
+    assert.equal(json.tool.name, "SkillPreflight");
     assert.equal(json.reports, undefined);
   });
 

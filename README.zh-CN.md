@@ -190,6 +190,8 @@ skill-preflight badge ./my-skill --out skill-preflight-badge.json
 }
 ```
 
+JSON 扫描报告会记录报告结构版本、SkillPreflight 版本和相对 Skill 路径，不再输出内部绝对路径或临时下载目录。详见 [JSON 报告结构](docs/report-schema.md)。
+
 ## GitHub Action
 
 SkillPreflight 已发布到 GitHub Marketplace。Skill 作者可以在每次 PR 或 push 时自动扫描：
