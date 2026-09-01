@@ -24,6 +24,23 @@ describe("SkillPreflight scanner", () => {
     assert.equal(stdout.trim(), packageMetadata.version);
   });
 
+  it("ships a safe and discoverable companion agent skill", async () => {
+    const skillRoot = path.join(projectRoot, "skills", "skill-preflight");
+    const skillSource = await readFile(path.join(skillRoot, "SKILL.md"), "utf8");
+    const openAiMetadata = await readFile(path.join(skillRoot, "agents", "openai.yaml"), "utf8");
+    const evalCases = JSON.parse(await readFile(path.join(skillRoot, "evals", "example-cases.json"), "utf8"));
+    const report = await scanSkillRoot(skillRoot, "skills/skill-preflight");
+
+    assert.match(skillSource, /^---\r?\nname: skill-preflight\r?\ndescription:/);
+    assert.match(openAiMetadata, /\$skill-preflight/);
+    assert.equal(evalCases.length, 3);
+    assert.ok(report.score >= 95, `expected companion skill score >= 95, got ${report.score}`);
+    assert.equal(
+      report.findings.some((finding) => finding.severity === "critical" || finding.severity === "high"),
+      false
+    );
+  });
+
   it("parses GitHub repository URLs with optional .git suffix", () => {
     assert.deepEqual(parseGitHubUrl("https://github.com/affaan-m/ECC.git"), {
       owner: "affaan-m",

@@ -20,7 +20,17 @@ It helps users decide whether a Codex, Claude Code, Cursor, Gemini CLI, or other
 
 If SkillPreflight helps you vet a third-party skill, consider starring the repository so more users can discover safer pre-install checks.
 
+**One command, no account or API key, no global install, and no execution of code from the scanned skill.**
+
+> **Public benchmark:** In a reproducible snapshot of 40 public skill directories, all 40 lacked bundled tests and examples, 5 triggered secret-access review findings, and 4 exceeded the high token-size threshold. Read the [data, methodology, and limitations](benchmarks/2026-08-public-skills/README.md).
+
 ## Quick Start
+
+Try SkillPreflight against the repository's intentionally risky fixture:
+
+```bash
+npx skill-preflight@latest scan https://github.com/agent-contracts/skill-preflight/tree/main/examples/risky-skill
+```
 
 Run without installing:
 
@@ -61,14 +71,15 @@ Apply a local policy when scanning a repository:
 npx skill-preflight scan . --config skill-preflight.json
 ```
 
-## Local Development
+## Install As An Agent Skill
+
+Install the companion skill so an AI coding agent can run the pre-install audit workflow for you:
 
 ```bash
-npm install
-npm run build
-npm test
-npm run dev -- scan examples/risky-skill
+npx skills add agent-contracts/skill-preflight --skill skill-preflight
 ```
+
+The companion skill scans first, surfaces severe findings independently of the aggregate score, and asks before installation. Its source is in [`skills/skill-preflight`](skills/skill-preflight/SKILL.md).
 
 ## Score Model
 
@@ -214,6 +225,19 @@ Top findings:
 ## Rule Catalog
 
 See `docs/rules.md` for the current static analysis rule catalog, including dependency, install-script, MCP config, token, and compatibility checks.
+
+## Contributing
+
+Rule ideas, false-positive examples, fixtures, and integration improvements are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md). Report security vulnerabilities through the private process in [SECURITY.md](SECURITY.md), not a public issue.
+
+Local development:
+
+```bash
+npm ci
+npm test
+npm run test:coverage
+npm pack --dry-run
+```
 
 ## Publishing
 

@@ -20,6 +20,10 @@ SkillPreflight 是一个面向 AI Agent Skill 的安装前安全、Token 和可�
 
 如果 SkillPreflight 帮助你检查了第三方 Skill，欢迎为项目点一个 Star，让更多用户在安装前先看清风险。
 
+**一条命令即可使用，无需账号、API Key 或全局安装，也不会执行被扫描 Skill 中的代码。**
+
+> **公开基准数据：** 在一组可复现的 40 个公开 Skill 目录样本中，40 个目录都没有包含测试和示例，5 个触发了敏感信息访问复核项，4 个超过高 Token 体积阈值。详见[原始数据、方法与限制](benchmarks/2026-08-public-skills/README.md)。
+
 ## 为什么需要 SkillPreflight？
 
 AI Agent 生态正在快速发展，越来越多的能力被封装成 Skill：写代码、查资料、生成内容、调用浏览器、连接 MCP 工具、执行项目工作流。
@@ -36,6 +40,12 @@ Skill 让智能体更强，但也带来了新的问题：
 SkillPreflight 的目标就是在安装前做一次静态体检，让用户有一个更客观的参考。
 
 ## 快速开始
+
+可以先扫描项目内故意设计为高风险的测试样例，直接查看真实输出：
+
+```bash
+npx skill-preflight@latest scan https://github.com/agent-contracts/skill-preflight/tree/main/examples/risky-skill
+```
 
 无需全局安装，直接运行：
 
@@ -88,14 +98,15 @@ npx skill-preflight scan ./my-skill --format json --out report.json
 npx skill-preflight scan ./my-skill --format sarif --out skill-preflight.sarif
 ```
 
-## 本地开发
+## 安装为 Agent Skill
+
+也可以把配套 Skill 安装到 Codex、Claude Code 等智能体中，让智能体在安装其他 Skill 前主动运行检查：
 
 ```bash
-npm install
-npm run build
-npm test
-npm run dev -- scan examples/risky-skill
+npx skills add agent-contracts/skill-preflight --skill skill-preflight
 ```
+
+配套 Skill 会先扫描、单独强调严重发现，并在真正安装前要求确认。源码位于 [`skills/skill-preflight`](skills/skill-preflight/SKILL.md)。
 
 ## 评分模型
 
@@ -265,6 +276,19 @@ SkillPreflight 适合三类用户：
 ## 规则目录
 
 当前静态分析规则请参考 `docs/rules.md`，其中包含依赖、安装脚本、MCP 配置、Token 和兼容性相关检查。
+
+## 参与贡献
+
+欢迎提交规则建议、误报样例、测试夹具和集成优化，详见 [CONTRIBUTING.md](CONTRIBUTING.md)。安全漏洞请按照 [SECURITY.md](SECURITY.md) 私下报告，不要直接创建公开 Issue。
+
+本地开发与发布前检查：
+
+```bash
+npm ci
+npm test
+npm run test:coverage
+npm pack --dry-run
+```
 
 ## 发布流程
 
