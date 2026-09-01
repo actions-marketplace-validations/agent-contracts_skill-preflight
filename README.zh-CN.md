@@ -22,7 +22,7 @@ SkillPreflight 是一个面向 AI Agent Skill 的安装前安全、Token 和可�
 
 **一条命令即可使用，无需账号、API Key 或全局安装，也不会执行被扫描 Skill 中的代码。**
 
-> **公开基准数据：** 在一组可复现的 40 个公开 Skill 目录样本中，40 个目录都没有包含测试和示例，5 个触发了敏感信息访问复核项，4 个超过高 Token 体积阈值。详见[原始数据、方法与限制](benchmarks/2026-08-public-skills/README.md)。
+> **公开基准数据：** 2026 年 9 月的一组可复现快照选取了 100 个公开 Skill 目录，其中 97 个成功完成扫描。在这 97 个目录中，97 个没有包含测试，93 个没有示例，13 个触发了敏感信息访问复核项，11 个超过高 Token 体积阈值。详见[原始数据、方法与限制](benchmarks/2026-09-public-skills/README.md)。
 
 ## 为什么需要 SkillPreflight？
 
@@ -235,11 +235,11 @@ skill-preflight scan . --format sarif --out skill-preflight.sarif
 
 ## 公开 Skill 基准报告
 
-2026 年 8 月，SkillPreflight 对一组固定到具体 commit 的 40 个公开 Agent Skill 进行了扫描。该样本平均分为 **80.8/100**，中位数为 **85.5/100**。
+2026 年 9 月，SkillPreflight 选取了一组固定到具体 commit 的 100 个公开 Agent Skill 目录，其中 97 个成功完成扫描。成功样本平均分为 **80.5/100**，中位数为 **85/100**。
 
-![SkillPreflight 公开 Skill 基准报告](https://raw.githubusercontent.com/agent-contracts/skill-preflight/main/benchmarks/2026-08-public-skills/benchmark-summary.png)
+![SkillPreflight 公开 Skill 基准报告](https://raw.githubusercontent.com/agent-contracts/skill-preflight/main/benchmarks/2026-09-public-skills/benchmark-summary.svg)
 
-查看[可复现的完整基准报告](benchmarks/2026-08-public-skills/README.md)，可了解抽样方法、汇总结果、固定样本和原始 JSON/CSV 数据。这是一组便利样本，不代表整个生态的排名；静态分析结果仍需人工复核。
+查看[可复现的完整基准报告](benchmarks/2026-09-public-skills/README.md)，可了解抽样方法、汇总结果、固定样本、原始 JSON/CSV 数据与未能获取的样本错误记录。这是一组便利样本，不代表整个生态的排名；静态分析结果仍需人工复核。
 
 ## 安全原则
 

@@ -22,7 +22,7 @@ If SkillPreflight helps you vet a third-party skill, consider starring the repos
 
 **One command, no account or API key, no global install, and no execution of code from the scanned skill.**
 
-> **Public benchmark:** In a reproducible snapshot of 40 public skill directories, all 40 lacked bundled tests and examples, 5 triggered secret-access review findings, and 4 exceeded the high token-size threshold. Read the [data, methodology, and limitations](benchmarks/2026-08-public-skills/README.md).
+> **Public benchmark:** A reproducible September 2026 snapshot selected 100 public skill directories; 97 scanned successfully. Of those 97, 97 lacked bundled tests, 93 lacked examples, 13 triggered secret-access review findings, and 11 exceeded the high token-size threshold. Read the [data, methodology, and limitations](benchmarks/2026-09-public-skills/README.md).
 
 ## Quick Start
 
@@ -201,11 +201,11 @@ See `docs/github-action.md` for the full workflow.
 
 ## Public Benchmark
 
-In August 2026, SkillPreflight scanned a frozen, commit-pinned sample of 40 public agent skills. The sample averaged **80.8/100**, with a median score of **85.5/100**.
+In September 2026, SkillPreflight selected a frozen, commit-pinned sample of 100 public agent skill directories and scanned 97 successfully. The successful sample averaged **80.5/100**, with a median score of **85/100**.
 
-![SkillPreflight public skill benchmark](https://raw.githubusercontent.com/agent-contracts/skill-preflight/main/benchmarks/2026-08-public-skills/benchmark-summary.png)
+![SkillPreflight public skill benchmark](https://raw.githubusercontent.com/agent-contracts/skill-preflight/main/benchmarks/2026-09-public-skills/benchmark-summary.svg)
 
-Read the [reproducible benchmark report](benchmarks/2026-08-public-skills/README.md) for the methodology, aggregate findings, source snapshot, and raw JSON/CSV data. This convenience sample is not an ecosystem ranking, and static findings require manual review.
+Read the [reproducible benchmark report](benchmarks/2026-09-public-skills/README.md) for the methodology, aggregate findings, source snapshot, raw JSON/CSV data, and failed retrieval records. This convenience sample is not an ecosystem ranking, and static findings require manual review.
 
 ## Safety Principle
 

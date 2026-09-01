@@ -9,13 +9,15 @@ import { scan } from "../dist/core/scan.js";
 
 const execFileAsync = promisify(execFile);
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const outputDir = path.join(rootDir, "benchmarks", "2026-08-public-skills");
-const samplePath = path.join(outputDir, "sample.json");
 const packageJson = JSON.parse(await readFile(path.join(rootDir, "package.json"), "utf8"));
 const refresh = process.argv.includes("--refresh");
 const reuseResults = process.argv.includes("--reuse-results");
 const perQuery = parseIntegerOption("--per-query", 20);
 const concurrency = parseIntegerOption("--concurrency", 3);
+const snapshot = parseSnapshotOption("--snapshot", "2026-08-public-skills");
+const snapshotTitle = formatSnapshotTitle(snapshot);
+const outputDir = path.join(rootDir, "benchmarks", snapshot);
+const samplePath = path.join(outputDir, "sample.json");
 
 const searchGroups = [
   {
@@ -45,6 +47,10 @@ const generatedAt = new Date().toISOString();
 const report = {
   schemaVersion: 1,
   generatedAt,
+  benchmark: {
+    id: snapshot,
+    title: snapshotTitle
+  },
   scanner: {
     name: packageJson.name,
     version: packageJson.version
@@ -340,7 +346,7 @@ function renderReadme(report) {
     )
     .join("\n");
 
-  return `# Public Agent Skill Benchmark: August 2026
+  return `# Public Agent Skill Benchmark: ${report.benchmark.title}
 
 ![SkillPreflight public skill benchmark](./benchmark-summary.svg)
 
@@ -382,6 +388,7 @@ ${findings}
 - The first ${report.methodology.searchGroups.length > 1 ? "eligible results from each query" : "eligible results"} were selected after filtering to public, non-fork repositories and one skill per repository.
 - Every GitHub blob URL is pinned to the commit returned by code search. The sample was frozen at ${report.methodology.frozenAt}.
 - Scans were generated on ${date} with SkillPreflight ${report.scanner.version} and its default rules.
+- Aggregate metrics include only successfully scanned skill directories. Failed source retrievals are retained with their errors in the raw results.
 - The report presents aggregate results. Raw records are retained for reproducibility, not for naming and shaming.
 
 ## Reproduce
@@ -390,19 +397,19 @@ From the repository root with Node.js 20+, Git, GitHub CLI, and an authenticated
 
 \`\`\`bash
 npm ci
-npm run benchmark:public
+npm run benchmark:public -- --snapshot ${report.benchmark.id}
 \`\`\`
 
 The committed \`sample.json\` is reused by default. To discover and freeze a new sample:
 
 \`\`\`bash
-npm run benchmark:public -- --refresh
+npm run benchmark:public -- --snapshot YYYY-MM-public-skills --per-query 50 --refresh
 \`\`\`
 
 To regenerate the aggregate files and chart from the existing raw scan records without making network requests:
 
 \`\`\`bash
-npm run benchmark:public -- --reuse-results
+npm run benchmark:public -- --snapshot ${report.benchmark.id} --reuse-results
 \`\`\`
 
 ## Data
@@ -462,7 +469,7 @@ function renderSummarySvg(report) {
     <path d="M22 0 44 9v17c0 17-9 30-22 38C9 56 0 43 0 26V9L22 0Z" fill="#171a21"/>
     <path d="m13 31 6 6 13-16" fill="none" stroke="#f7f8fa" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
     <text x="62" y="27" class="section">SkillPreflight</text>
-    <text x="62" y="50" class="eyebrow">PUBLIC BENCHMARK / AUGUST 2026</text>
+    <text x="62" y="50" class="eyebrow">PUBLIC BENCHMARK / ${escapeXml(report.benchmark.title.toUpperCase())}</text>
   </g>
   <text x="72" y="186" class="heading">What do public agent skills look like</text>
   <text x="72" y="244" class="heading">before installation?</text>
@@ -572,6 +579,24 @@ function parseIntegerOption(name, fallback) {
     throw new Error(`${name} must be a positive integer.`);
   }
   return parsed;
+}
+
+function parseSnapshotOption(name, fallback) {
+  const prefix = `${name}=`;
+  const inline = process.argv.find((argument) => argument.startsWith(prefix));
+  const index = process.argv.indexOf(name);
+  const value = inline?.slice(prefix.length) ?? (index >= 0 ? process.argv[index + 1] : fallback);
+  if (!/^\d{4}-(0[1-9]|1[0-2])-public-skills$/.test(value)) {
+    throw new Error(`${name} must use the format YYYY-MM-public-skills.`);
+  }
+  return value;
+}
+
+function formatSnapshotTitle(snapshot) {
+  const [year, month] = snapshot.split("-");
+  return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric", timeZone: "UTC" }).format(
+    new Date(Date.UTC(Number(year), Number(month) - 1, 1))
+  );
 }
 
 function extractCommit(url) {
