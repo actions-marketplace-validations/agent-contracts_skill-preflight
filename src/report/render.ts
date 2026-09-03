@@ -1,11 +1,43 @@
+import { createRequire } from "node:module";
 import type { Finding, ScanReport, SkillReport } from "../core/types.js";
+
+const require = createRequire(import.meta.url);
+const packageMetadata = require("../../package.json") as { version: string };
+const REPORT_SCHEMA_VERSION = 1;
 
 export type ReportFormat = "text" | "json" | "markdown" | "html" | "sarif";
 
-export function renderReport(report: ScanReport, format: ReportFormat): string {
+export interface ReportRenderOptions {
+  summary?: boolean;
+  top?: number;
+}
+
+export function renderReport(
+  report: ScanReport,
+  format: ReportFormat,
+  options: ReportRenderOptions = {}
+): string {
+  if (options.summary) {
+    if (format === "sarif") {
+      throw new Error("Summary mode is not supported with SARIF output.");
+    }
+
+    const top = normalizeTop(options.top);
+    switch (format) {
+      case "json":
+        return renderSummaryJson(report, top);
+      case "markdown":
+        return renderSummaryMarkdown(report, top);
+      case "html":
+        return renderSummaryHtml(report, top);
+      case "text":
+        return renderSummaryText(report, top);
+    }
+  }
+
   switch (format) {
     case "json":
-      return `${JSON.stringify(report, null, 2)}\n`;
+      return renderJson(report);
     case "markdown":
       return renderMarkdown(report);
     case "html":
@@ -15,6 +47,180 @@ export function renderReport(report: ScanReport, format: ReportFormat): string {
     case "text":
       return renderText(report);
   }
+}
+
+function renderJson(report: ScanReport): string {
+  return `${JSON.stringify(
+    {
+      schemaVersion: REPORT_SCHEMA_VERSION,
+      tool: reportTool(),
+      generatedAt: report.generatedAt,
+      target: report.target,
+      reports: report.reports.map(publicSkillReport),
+      summary: report.summary,
+      policy: report.policy
+    },
+    null,
+    2
+  )}\n`;
+}
+
+function renderSummaryText(report: ScanReport, top: number): string {
+  const ranked = lowestScoringSkills(report, top);
+  const lines = [
+    "SkillPreflight Summary",
+    `Target: ${report.target}`,
+    `Generated: ${report.generatedAt}`,
+    `Skills scanned: ${report.summary.count}`,
+    `Average score: ${report.summary.averageScore}/100`,
+    `Minimum score: ${report.summary.minScore}/100`,
+    `High risk skills: ${report.summary.highRiskCount}`,
+    `Suppressed findings: ${suppressedCount(report)}`,
+    "",
+    `Lowest scoring skills (showing ${ranked.length} of ${report.summary.count}):`
+  ];
+
+  if (ranked.length === 0) {
+    lines.push("No skills found.");
+  }
+
+  ranked.forEach((skill, index) => {
+    lines.push(`${index + 1}. ${skill.skillName}: ${skill.score}/100 (${skill.grade}) - ${skill.recommendation}`);
+    lines.push(
+      `   Path: ${displaySkillPath(skill)} | Findings: ${skill.findings.length} | High/critical: ${highRiskFindingCount(skill)}`
+    );
+  });
+
+  return `${lines.join("\n")}\n`;
+}
+
+function renderSummaryJson(report: ScanReport, top: number): string {
+  return `${JSON.stringify(
+    {
+      schemaVersion: REPORT_SCHEMA_VERSION,
+      tool: reportTool(),
+      generatedAt: report.generatedAt,
+      target: report.target,
+      summary: report.summary,
+      lowestScoringSkills: lowestScoringSkills(report, top).map((skill) => ({
+        skillName: skill.skillName,
+        path: displaySkillPath(skill),
+        score: skill.score,
+        grade: skill.grade,
+        recommendation: skill.recommendation,
+        findingCount: skill.findings.length,
+        highRiskFindingCount: highRiskFindingCount(skill)
+      }))
+    },
+    null,
+    2
+  )}\n`;
+}
+
+function renderSummaryMarkdown(report: ScanReport, top: number): string {
+  const ranked = lowestScoringSkills(report, top);
+  const lines = [
+    "# SkillPreflight Summary",
+    "",
+    `- Target: \`${report.target}\``,
+    `- Generated: \`${report.generatedAt}\``,
+    `- Skills scanned: ${report.summary.count}`,
+    `- Average score: ${report.summary.averageScore}/100`,
+    `- Minimum score: ${report.summary.minScore}/100`,
+    `- High risk skills: ${report.summary.highRiskCount}`,
+    `- Suppressed findings: ${suppressedCount(report)}`,
+    "",
+    `## Lowest Scoring Skills (showing ${ranked.length} of ${report.summary.count})`,
+    "",
+    "| Skill | Path | Score | Grade | Findings | High/Critical | Recommendation |",
+    "| --- | --- | ---: | :---: | ---: | ---: | --- |"
+  ];
+
+  for (const skill of ranked) {
+    lines.push(
+      `| ${escapeMarkdownCell(skill.skillName)} | ${escapeMarkdownCell(displaySkillPath(skill))} | ${skill.score}/100 | ${skill.grade} | ${skill.findings.length} | ${highRiskFindingCount(skill)} | ${escapeMarkdownCell(skill.recommendation)} |`
+    );
+  }
+
+  if (ranked.length === 0) {
+    lines.push("| No skills found | - | - | - | - | - | - |");
+  }
+
+  return `${lines.join("\n")}\n`;
+}
+
+function renderSummaryHtml(report: ScanReport, top: number): string {
+  const ranked = lowestScoringSkills(report, top);
+  const rows = ranked
+    .map(
+      (skill) => `<tr>
+          <td>${escapeHtml(skill.skillName)}</td>
+          <td><code>${escapeHtml(displaySkillPath(skill))}</code></td>
+          <td>${skill.score}/100</td>
+          <td>${escapeHtml(skill.grade)}</td>
+          <td>${skill.findings.length}</td>
+          <td>${highRiskFindingCount(skill)}</td>
+          <td>${escapeHtml(skill.recommendation)}</td>
+        </tr>`
+    )
+    .join("\n");
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SkillPreflight Summary</title>
+  <style>
+    :root { color-scheme: light dark; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { margin: 0; background: #f6f7f9; color: #17202a; }
+    main { max-width: 1040px; margin: 0 auto; padding: 32px 20px 56px; }
+    h1 { font-size: 28px; margin: 0 0 8px; }
+    h2 { font-size: 22px; margin: 28px 0 12px; }
+    .summary { background: #fff; border: 1px solid #d9dee7; border-radius: 8px; padding: 18px; margin: 20px 0; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+    .metric { background: #f0f3f7; border-radius: 6px; padding: 12px; }
+    .metric span { display: block; color: #5f6b7a; font-size: 12px; }
+    .metric strong { display: block; font-size: 20px; margin-top: 4px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #e5e8ef; padding: 9px; text-align: left; white-space: nowrap; }
+    th:nth-child(n+3):nth-child(-n+6), td:nth-child(n+3):nth-child(-n+6) { text-align: right; }
+    code { background: #eef1f5; padding: 2px 5px; border-radius: 4px; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #11161d; color: #e8edf4; }
+      .summary { background: #18212b; border-color: #2b3847; }
+      .metric { background: #202b36; }
+      th, td { border-bottom-color: #2b3847; }
+      code { background: #263240; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>SkillPreflight Summary</h1>
+    <div>Target: <code>${escapeHtml(report.target)}</code></div>
+    <div>Generated: <code>${escapeHtml(report.generatedAt)}</code></div>
+    <section class="summary">
+      <div class="grid">
+        <div class="metric"><span>Skills scanned</span><strong>${report.summary.count}</strong></div>
+        <div class="metric"><span>Average score</span><strong>${report.summary.averageScore}/100</strong></div>
+        <div class="metric"><span>Minimum score</span><strong>${report.summary.minScore}/100</strong></div>
+        <div class="metric"><span>High risk</span><strong>${report.summary.highRiskCount}</strong></div>
+        <div class="metric"><span>Suppressed findings</span><strong>${suppressedCount(report)}</strong></div>
+      </div>
+    </section>
+    <h2>Lowest Scoring Skills (showing ${ranked.length} of ${report.summary.count})</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Skill</th><th>Path</th><th>Score</th><th>Grade</th><th>Findings</th><th>High/Critical</th><th>Recommendation</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="7">No skills found.</td></tr>'}</tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>
+`;
 }
 
 export function parseFormat(value: string): ReportFormat {
@@ -32,11 +238,12 @@ function renderText(report: ScanReport): string {
   lines.push(`Generated: ${report.generatedAt}`);
   lines.push(`Skills scanned: ${report.summary.count}`);
   lines.push(`Average score: ${report.summary.averageScore}/100`);
+  lines.push(`Suppressed findings: ${suppressedCount(report)}`);
   lines.push("");
 
   for (const skill of report.reports) {
     lines.push(`${skill.skillName}: ${skill.score}/100 (${skill.grade}) - ${skill.recommendation}`);
-    lines.push(`Path: ${skill.rootPath}`);
+    lines.push(`Path: ${displaySkillPath(skill)}`);
     lines.push("Category scores:");
 
     for (const category of skill.categories) {
@@ -47,6 +254,7 @@ function renderText(report: ScanReport): string {
     lines.push(`  - Files: ${skill.metrics.totalFiles}`);
     lines.push(`  - Size: ${formatBytes(skill.metrics.totalBytes)}`);
     lines.push(`  - Estimated activation tokens: ${skill.metrics.estimatedActivationTokens}`);
+    lines.push(`  - Suppressed findings: ${skill.suppressedFindings.length}`);
 
     if (skill.findings.length === 0) {
       lines.push("Findings: none");
@@ -78,6 +286,7 @@ function renderMarkdown(report: ScanReport): string {
   lines.push(`- Skills scanned: ${report.summary.count}`);
   lines.push(`- Average score: ${report.summary.averageScore}/100`);
   lines.push(`- High risk skills: ${report.summary.highRiskCount}`);
+  lines.push(`- Suppressed findings: ${suppressedCount(report)}`);
   lines.push("");
 
   for (const skill of report.reports) {
@@ -85,7 +294,7 @@ function renderMarkdown(report: ScanReport): string {
     lines.push("");
     lines.push(`**Recommendation:** ${skill.recommendation}`);
     lines.push("");
-    lines.push(`**Path:** \`${skill.rootPath}\``);
+    lines.push(`**Path:** \`${displaySkillPath(skill)}\``);
     lines.push("");
     lines.push("| Category | Score |");
     lines.push("| --- | ---: |");
@@ -98,6 +307,7 @@ function renderMarkdown(report: ScanReport): string {
     lines.push(`| Files | ${skill.metrics.totalFiles} |`);
     lines.push(`| Size | ${formatBytes(skill.metrics.totalBytes)} |`);
     lines.push(`| Estimated activation tokens | ${skill.metrics.estimatedActivationTokens} |`);
+    lines.push(`| Suppressed findings | ${skill.suppressedFindings.length} |`);
     lines.push("");
     lines.push("### Findings");
     lines.push("");
@@ -170,6 +380,7 @@ function renderHtml(report: ScanReport): string {
         <div class="metric"><span>Average score</span><strong>${report.summary.averageScore}/100</strong></div>
         <div class="metric"><span>Minimum score</span><strong>${report.summary.minScore}/100</strong></div>
         <div class="metric"><span>High risk</span><strong>${report.summary.highRiskCount}</strong></div>
+        <div class="metric"><span>Suppressed findings</span><strong>${suppressedCount(report)}</strong></div>
       </div>
     </section>
     ${skillSections}
@@ -196,7 +407,7 @@ function renderSarif(report: ScanReport): string {
           {
             physicalLocation: {
               artifactLocation: {
-                uri: finding.file ? normalizeSarifUri(finding.file) : normalizeSarifUri(skill.rootPath)
+                uri: finding.file ? normalizeSarifUri(finding.file) : normalizeSarifUri(displaySkillPath(skill))
               },
               region: finding.line ? { startLine: finding.line } : undefined
             }
@@ -240,6 +451,8 @@ function renderSarif(report: ScanReport): string {
           tool: {
             driver: {
               name: "SkillPreflight",
+              version: packageMetadata.version,
+              semanticVersion: packageMetadata.version,
               informationUri: "https://github.com/agent-contracts/skill-preflight",
               rules
             }
@@ -251,7 +464,9 @@ function renderSarif(report: ScanReport): string {
             target: report.target,
             generatedAt: report.generatedAt,
             averageScore: report.summary.averageScore,
-            highRiskCount: report.summary.highRiskCount
+            highRiskCount: report.summary.highRiskCount,
+            suppressedCount: suppressedCount(report),
+            policy: report.policy
           },
           results
         }
@@ -260,6 +475,21 @@ function renderSarif(report: ScanReport): string {
     null,
     2
   )}\n`;
+}
+
+function publicSkillReport(skill: SkillReport): Omit<SkillReport, "rootPath" | "displayPath"> & { path: string } {
+  const { rootPath: _rootPath, displayPath: _displayPath, ...publicReport } = skill;
+  return {
+    ...publicReport,
+    path: displaySkillPath(skill)
+  };
+}
+
+function reportTool(): { name: "SkillPreflight"; version: string } {
+  return {
+    name: "SkillPreflight",
+    version: packageMetadata.version
+  };
 }
 
 function renderSkillHtml(skill: SkillReport): string {
@@ -284,11 +514,12 @@ function renderSkillHtml(skill: SkillReport): string {
   return `<section class="skill">
   <h2>${escapeHtml(skill.skillName)}: ${skill.score}/100 (${skill.grade})</h2>
   <p><strong>Recommendation:</strong> ${escapeHtml(skill.recommendation)}</p>
-  <p><strong>Path:</strong> <code>${escapeHtml(skill.rootPath)}</code></p>
+  <p><strong>Path:</strong> <code>${escapeHtml(displaySkillPath(skill))}</code></p>
   <div class="grid">
     <div class="metric"><span>Files</span><strong>${skill.metrics.totalFiles}</strong></div>
     <div class="metric"><span>Size</span><strong>${formatBytes(skill.metrics.totalBytes)}</strong></div>
     <div class="metric"><span>Activation tokens</span><strong>${skill.metrics.estimatedActivationTokens}</strong></div>
+    <div class="metric"><span>Suppressed findings</span><strong>${skill.suppressedFindings.length}</strong></div>
   </div>
   <table>
     <thead><tr><th>Category</th><th>Score</th></tr></thead>
@@ -305,6 +536,40 @@ function formatLocation(finding: Finding): string {
   }
 
   return finding.line ? ` (${finding.file}:${finding.line})` : ` (${finding.file})`;
+}
+
+function lowestScoringSkills(report: ScanReport, top: number): SkillReport[] {
+  return [...report.reports]
+    .sort((left, right) => left.score - right.score || left.skillName.localeCompare(right.skillName))
+    .slice(0, top);
+}
+
+function highRiskFindingCount(skill: SkillReport): number {
+  return skill.findings.filter((finding) => finding.severity === "critical" || finding.severity === "high").length;
+}
+
+function displaySkillPath(skill: SkillReport): string {
+  return skill.displayPath ?? ".";
+}
+
+function suppressedCount(report: ScanReport): number {
+  return report.summary.suppressedCount ?? report.reports.reduce(
+    (sum, skill) => sum + (skill.suppressedFindings?.length ?? 0),
+    0
+  );
+}
+
+function normalizeTop(top: number | undefined): number {
+  const value = top ?? 20;
+  if (!Number.isSafeInteger(value) || value < 1) {
+    throw new Error(`Invalid summary item count: ${String(top)}. Use a positive integer.`);
+  }
+
+  return value;
+}
+
+function escapeMarkdownCell(value: string): string {
+  return value.replaceAll("|", "\\|").replaceAll("\n", " ");
 }
 
 function formatBytes(bytes: number): string {

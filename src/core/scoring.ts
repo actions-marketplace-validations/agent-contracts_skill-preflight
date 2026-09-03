@@ -9,9 +9,17 @@ export function scoreFindings(findings: Finding[]): {
   categories: CategoryScore[];
 } {
   const categories = CATEGORIES.map((category) => {
-    const impact = findings
-      .filter((finding) => finding.category === category.id)
-      .reduce((sum, finding) => sum + finding.scoreImpact, 0);
+    const impactByRule = new Map<string, number>();
+
+    for (const finding of findings) {
+      if (finding.category !== category.id) {
+        continue;
+      }
+
+      impactByRule.set(finding.id, Math.max(impactByRule.get(finding.id) ?? 0, finding.scoreImpact));
+    }
+
+    const impact = [...impactByRule.values()].reduce((sum, scoreImpact) => sum + scoreImpact, 0);
 
     return {
       id: category.id,

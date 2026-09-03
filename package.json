@@ -1,23 +1,29 @@
 {
   "name": "skill-preflight",
-  "version": "0.1.2",
+  "version": "0.7.0",
   "description": "Pre-install safety, token, and maintainability scorecard for AI agent skills.",
   "type": "module",
   "bin": {
-    "skill-preflight": "./dist/index.js"
+    "skill-preflight": "dist/index.js"
   },
   "files": [
     "dist",
     "docs",
+    "skills",
+    "assets/skill-preflight-avatar.png",
+    "assets/skill-preflight-avatar.svg",
     "README.md",
+    "README.zh-CN.md",
     "LICENSE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "tsx src/index.ts",
+    "benchmark:public": "npm run build && node scripts/benchmark-public-skills.mjs",
+    "dev": "npm run build && node dist/index.js",
     "test": "npm run build && node --test test/scan.test.mjs",
-    "scan:good": "tsx src/index.ts scan examples/good-skill",
-    "scan:risky": "tsx src/index.ts scan examples/risky-skill",
+    "test:coverage": "npm run build && node --experimental-test-coverage --test test/scan.test.mjs",
+    "scan:good": "npm run build && node dist/index.js scan examples/good-skill",
+    "scan:risky": "npm run build && node dist/index.js scan examples/risky-skill",
     "prepack": "npm run build"
   },
   "keywords": [
@@ -25,6 +31,10 @@
     "skills",
     "security",
     "scanner",
+    "agent-skills",
+    "skill-md",
+    "static-analysis",
+    "token-efficiency",
     "codex",
     "claude",
     "mcp",
@@ -48,12 +58,11 @@
   },
   "dependencies": {
     "commander": "^12.1.0",
-    "tar": "^7.5.16",
-    "undici": "^6.26.0"
+    "tar": "^7.5.22",
+    "undici": "^6.28.0"
   },
   "devDependencies": {
-    "@types/node": "^20.19.0",
-    "tsx": "^4.20.3",
-    "typescript": "^5.8.3"
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
   }
 }

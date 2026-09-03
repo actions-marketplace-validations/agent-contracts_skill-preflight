@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect width="1280" height="720" fill="#f5f7f4"/>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <text x="64" y="62" font-size="32" font-weight="750" fill="#171a18">One command. A clear pre-install decision.</text>
+    <text x="64" y="96" font-size="18" fill="#59625c">Scan a local folder or GitHub URL without executing the skill.</text>
+
+    <rect x="64" y="132" width="1152" height="520" rx="8" fill="#171a18"/>
+    <rect x="64" y="132" width="1152" height="52" rx="8" fill="#242925"/>
+    <circle cx="94" cy="158" r="6" fill="#e05252"/>
+    <circle cx="116" cy="158" r="6" fill="#d99a2b"/>
+    <circle cx="138" cy="158" r="6" fill="#38a169"/>
+    <text x="640" y="165" text-anchor="middle" font-size="15" fill="#aeb8b1">skill-preflight</text>
+
+    <text x="96" y="226" font-family="Consolas, monospace" font-size="19" fill="#75d69a">$</text>
+    <text x="120" y="226" font-family="Consolas, monospace" font-size="19" fill="#f7faf8">npx skill-preflight scan ./examples/good-skill</text>
+
+    <text x="96" y="278" font-family="Consolas, monospace" font-size="18" fill="#aeb8b1">SkillPreflight Report</text>
+    <text x="96" y="314" font-family="Consolas, monospace" font-size="17" fill="#d5ddd7">Skills scanned: 1</text>
+    <text x="96" y="346" font-family="Consolas, monospace" font-size="17" fill="#d5ddd7">Average score: 100/100</text>
+
+    <text x="96" y="405" font-family="Consolas, monospace" font-size="22" font-weight="700" fill="#ffffff">safe-doc-review</text>
+    <rect x="320" y="381" width="112" height="34" rx="6" fill="#16a34a"/>
+    <text x="376" y="404" text-anchor="middle" font-family="Consolas, monospace" font-size="16" font-weight="700" fill="#ffffff">100/100 A</text>
+    <text x="452" y="405" font-family="Consolas, monospace" font-size="18" fill="#75d69a">Recommended</text>
+
+    <text x="96" y="458" font-family="Consolas, monospace" font-size="17" fill="#d5ddd7">Security             35/35</text>
+    <text x="96" y="490" font-family="Consolas, monospace" font-size="17" fill="#d5ddd7">Token efficiency     15/15</text>
+    <text x="96" y="522" font-family="Consolas, monospace" font-size="17" fill="#d5ddd7">Maintainability      10/10</text>
+    <text x="96" y="554" font-family="Consolas, monospace" font-size="17" fill="#d5ddd7">Estimated tokens       178</text>
+
+    <text x="96" y="611" font-family="Consolas, monospace" font-size="18" font-weight="700" fill="#75d69a">Findings: none</text>
+
+    <rect x="852" y="226" width="298" height="330" rx="8" fill="#202521" stroke="#3c4640" stroke-width="2"/>
+    <text x="884" y="270" font-size="14" font-weight="700" fill="#9aa69e">WHAT IT CHECKS</text>
+    <text x="884" y="318" font-size="18" fill="#f7faf8">Dangerous commands</text>
+    <text x="884" y="358" font-size="18" fill="#f7faf8">Prompt injection</text>
+    <text x="884" y="398" font-size="18" fill="#f7faf8">Secret access</text>
+    <text x="884" y="438" font-size="18" fill="#f7faf8">Token overhead</text>
+    <text x="884" y="478" font-size="18" fill="#f7faf8">Dependencies</text>
+    <text x="884" y="518" font-size="18" fill="#f7faf8">Documentation</text>
+  </g>
+</svg>

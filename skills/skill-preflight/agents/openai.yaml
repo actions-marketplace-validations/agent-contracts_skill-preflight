@@ -1,0 +1,4 @@
+interface:
+  display_name: "SkillPreflight"
+  short_description: "Audit agent skills before installation"
+  default_prompt: "Use $skill-preflight to audit this agent skill before I install it."

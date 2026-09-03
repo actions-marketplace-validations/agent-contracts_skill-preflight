@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -7,6 +7,7 @@ import { promisify } from "node:util";
 import * as tar from "tar";
 import { ProxyAgent } from "undici";
 import type { ResolvedTarget, ScannedFile, TextFile } from "./types.js";
+import { isPathExcluded } from "./policy.js";
 import { isProbablyText, pathExists, toPosixPath } from "./utils.js";
 
 const execFileAsync = promisify(execFile);
@@ -57,7 +58,13 @@ export async function resolveTarget(target: string, keepTemp = false): Promise<R
         await removeTempPath(tempRoot);
 
         try {
-          await execFileAsync("git", ["clone", "--depth", "1", target, tempRoot], {
+          const cloneArgs = ["clone", "--depth", "1"];
+          if (githubRepo.ref) {
+            cloneArgs.push("--branch", githubRepo.ref, "--single-branch");
+          }
+          cloneArgs.push(`https://github.com/${githubRepo.owner}/${githubRepo.repo}.git`, tempRoot);
+
+          await execFileAsync("git", cloneArgs, {
             timeout: 120000,
             windowsHide: true
           });
@@ -75,9 +82,16 @@ export async function resolveTarget(target: string, keepTemp = false): Promise<R
       }
     }
 
+    const localPath = githubRepo.subpath ? resolveInside(tempRoot, githubRepo.subpath) : tempRoot;
+    if (!(await pathExists(localPath))) {
+      await removeTempPath(tempRoot).catch(() => undefined);
+      const refLabel = githubRepo.ref ? ` at ref ${githubRepo.ref}` : "";
+      throw new Error(`GitHub path not found${refLabel}: ${githubRepo.subpath}`);
+    }
+
     return {
       displayTarget: target,
-      localPath: tempRoot,
+      localPath,
       cleanup: keepTemp
         ? undefined
         : async () => {
@@ -104,6 +118,8 @@ export function isGitHubUrl(value: string): boolean {
 export interface GitHubRepoRef {
   owner: string;
   repo: string;
+  ref?: string;
+  subpath?: string;
 }
 
 export function parseGitHubUrl(value: string): GitHubRepoRef | undefined {
@@ -119,34 +135,63 @@ export function parseGitHubUrl(value: string): GitHubRepoRef | undefined {
     return undefined;
   }
 
-  const [owner, rawRepo, extra] = url.pathname.split("/").filter(Boolean);
-  if (!owner || !rawRepo || extra) {
+  const rawSegments = url.pathname.split("/").filter(Boolean);
+  const segments = rawSegments.map(decodeGitHubSegment);
+  if (segments.some((segment) => segment === undefined)) {
     return undefined;
   }
 
-  return {
-    owner,
-    repo: rawRepo.replace(/\.git$/i, "")
-  };
-}
-
-export async function discoverSkillRoots(rootPath: string): Promise<string[]> {
-  const directSkill = path.join(rootPath, "SKILL.md");
-  if (await pathExists(directSkill)) {
-    return [rootPath];
+  const [owner, rawRepo, mode, ...remaining] = segments as string[];
+  const repo = rawRepo?.replace(/\.git$/i, "");
+  if (!owner || !repo) {
+    return undefined;
   }
 
+  if (!mode) {
+    return { owner, repo };
+  }
+
+  if (mode === "tree" && remaining.length >= 1) {
+    const [ref, ...pathSegments] = remaining;
+    const subpath = pathSegments.join("/") || undefined;
+    return { owner, repo, ref, subpath };
+  }
+
+  if (mode === "blob" && remaining.length >= 2) {
+    const [ref, ...pathSegments] = remaining;
+    const filePath = pathSegments.join("/");
+    if (basenamePosix(filePath).toLowerCase() !== "skill.md") {
+      return undefined;
+    }
+
+    return {
+      owner,
+      repo,
+      ref,
+      subpath: dirnamePosix(filePath) || undefined
+    };
+  }
+
+  return undefined;
+}
+
+export async function discoverSkillRoots(rootPath: string, exclude: string[] = []): Promise<string[]> {
   const roots: string[] = [];
   await walk(rootPath, async (filePath) => {
     if (path.basename(filePath).toLowerCase() === "skill.md") {
       roots.push(path.dirname(filePath));
     }
-  });
+  }, { basePath: rootPath, exclude });
 
   return [...new Set(roots)].sort();
 }
 
-export async function readSkillFiles(rootPath: string): Promise<{
+export interface ReadSkillFilesOptions {
+  basePath?: string;
+  exclude?: string[];
+}
+
+export async function readSkillFiles(rootPath: string, options: ReadSkillFilesOptions = {}): Promise<{
   files: ScannedFile[];
   textFiles: TextFile[];
 }> {
@@ -154,14 +199,26 @@ export async function readSkillFiles(rootPath: string): Promise<{
   const textFiles: TextFile[] = [];
 
   await walk(rootPath, async (absolutePath) => {
-    const buffer = await readFile(absolutePath);
+    const metadata = await stat(absolutePath);
     const relativePath = toPosixPath(path.relative(rootPath, absolutePath));
-    const isText = buffer.length <= MAX_TEXT_FILE_BYTES && isProbablyText(buffer);
+
+    if (metadata.size > MAX_TEXT_FILE_BYTES) {
+      files.push({
+        path: relativePath,
+        absolutePath,
+        bytes: metadata.size,
+        isText: false
+      });
+      return;
+    }
+
+    const buffer = await readFile(absolutePath);
+    const isText = isProbablyText(buffer);
 
     files.push({
       path: relativePath,
       absolutePath,
-      bytes: buffer.length,
+      bytes: metadata.size,
       isText
     });
 
@@ -175,25 +232,38 @@ export async function readSkillFiles(rootPath: string): Promise<{
         lines: content.split(/\r?\n/)
       });
     }
+  }, {
+    basePath: options.basePath ?? rootPath,
+    exclude: options.exclude ?? []
   });
 
   return { files, textFiles };
 }
 
-async function walk(rootPath: string, onFile: (filePath: string) => Promise<void>): Promise<void> {
+interface WalkOptions {
+  basePath: string;
+  exclude: string[];
+}
+
+async function walk(
+  rootPath: string,
+  onFile: (filePath: string) => Promise<void>,
+  options: WalkOptions = { basePath: rootPath, exclude: [] }
+): Promise<void> {
   const entries = await readdir(rootPath, { withFileTypes: true });
 
   for (const entry of entries) {
     const absolutePath = path.join(rootPath, entry.name);
+    const relativePath = toPosixPath(path.relative(options.basePath, absolutePath));
 
     if (entry.isDirectory()) {
-      if (!IGNORED_DIRS.has(entry.name)) {
-        await walk(absolutePath, onFile);
+      if (!IGNORED_DIRS.has(entry.name) && !isPathExcluded(relativePath, options.exclude, true)) {
+        await walk(absolutePath, onFile, options);
       }
       continue;
     }
 
-    if (entry.isFile()) {
+    if (entry.isFile() && !isPathExcluded(relativePath, options.exclude)) {
       await onFile(absolutePath);
     }
   }
@@ -223,9 +293,10 @@ interface GitHubTreeResponse {
 }
 
 async function downloadGitHubSkillFiles(repoRef: GitHubRepoRef, destination: string): Promise<void> {
+  const ref = repoRef.ref ?? "HEAD";
   const treeUrl = `https://api.github.com/repos/${encodeURIComponent(repoRef.owner)}/${encodeURIComponent(
     repoRef.repo
-  )}/git/trees/HEAD?recursive=1`;
+  )}/git/trees/${encodeURIComponent(ref)}?recursive=1`;
   const treeResponse = await fetchJson<GitHubTreeResponse>(treeUrl, GITHUB_FETCH_TIMEOUT_MS);
   const entries = treeResponse.tree;
 
@@ -233,7 +304,19 @@ async function downloadGitHubSkillFiles(repoRef: GitHubRepoRef, destination: str
     throw new Error("GitHub API response did not include a repository tree.");
   }
 
-  const blobEntries = entries.filter((entry) => entry.type === "blob" && entry.path);
+  const scopedEntries = repoRef.subpath
+    ? entries.filter((entry) => isWithinRepoPath(entry.path, repoRef.subpath as string))
+    : entries;
+
+  if (repoRef.subpath && scopedEntries.length === 0) {
+    throw new Error(`GitHub path not found at ref ${ref}: ${repoRef.subpath}`);
+  }
+
+  if (repoRef.subpath) {
+    await mkdir(resolveInside(destination, repoRef.subpath), { recursive: true });
+  }
+
+  const blobEntries = scopedEntries.filter((entry) => entry.type === "blob" && entry.path);
   const skillRoots = new Set(
     blobEntries
       .filter((entry) => basenamePosix(entry.path).toLowerCase() === "skill.md")
@@ -283,7 +366,7 @@ async function downloadGitHubSkillFiles(repoRef: GitHubRepoRef, destination: str
   await runWithConcurrency(selected, GITHUB_DOWNLOAD_CONCURRENCY, async (entry) => {
     const fileUrl = `https://raw.githubusercontent.com/${encodeURIComponent(repoRef.owner)}/${encodeURIComponent(
       repoRef.repo
-    )}/HEAD/${encodePosixPath(entry.path)}`;
+    )}/${encodeURIComponent(ref)}/${encodePosixPath(entry.path)}`;
     const isSkillFile = basenamePosix(entry.path).toLowerCase() === "skill.md";
 
     try {
@@ -314,9 +397,10 @@ async function downloadGitHubSkillFiles(repoRef: GitHubRepoRef, destination: str
 }
 
 async function downloadGitHubTarball(repoRef: GitHubRepoRef, destination: string): Promise<void> {
+  const ref = repoRef.ref ?? "HEAD";
   const tarballUrl = `https://codeload.github.com/${encodeURIComponent(repoRef.owner)}/${encodeURIComponent(
     repoRef.repo
-  )}/tar.gz/HEAD`;
+  )}/tar.gz/${encodeURIComponent(ref)}`;
   const archivePath = path.join(os.tmpdir(), `skill-preflight-${randomUUID()}.tar.gz`);
 
   try {
@@ -468,10 +552,34 @@ function encodePosixPath(value: string): string {
   return value.split("/").map(encodeURIComponent).join("/");
 }
 
+function isWithinRepoPath(candidate: string, requestedPath: string): boolean {
+  return candidate === requestedPath || candidate.startsWith(`${requestedPath}/`);
+}
+
+function decodeGitHubSegment(value: string): string | undefined {
+  try {
+    const decoded = decodeURIComponent(value);
+    if (
+      !decoded ||
+      decoded === "." ||
+      decoded === ".." ||
+      decoded.includes("/") ||
+      decoded.includes("\\") ||
+      decoded.includes("\0")
+    ) {
+      return undefined;
+    }
+
+    return decoded;
+  } catch {
+    return undefined;
+  }
+}
+
 function resolveInside(rootPath: string, relativePath: string): string {
   const normalized = path.normalize(relativePath.replaceAll("/", path.sep));
 
-  if (path.isAbsolute(normalized) || normalized.startsWith("..")) {
+  if (path.isAbsolute(normalized) || normalized === ".." || normalized.startsWith(`..${path.sep}`)) {
     throw new Error(`Unsafe path from GitHub archive: ${relativePath}`);
   }
 

@@ -18,12 +18,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: agent-contracts/skill-preflight@v1
         with:
           target: "."
           fail-below: "70"
+          fail-on: high
 ```
 
 ## SARIF Upload
@@ -48,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: agent-contracts/skill-preflight@v1
         with:
@@ -63,12 +64,48 @@ jobs:
           sarif_file: skill-preflight.sarif
 ```
 
+## Large Skill Collections
+
+For repositories containing many skills, use summary mode to keep the workflow log focused on the lowest-scoring entries:
+
+```yaml
+- uses: agent-contracts/skill-preflight@v1
+  with:
+    target: "."
+    summary: "true"
+    top: "20"
+    fail-below: "70"
+```
+
+## Policy and Exclusions
+
+Use an explicit policy file when the repository contains generated fixtures or reviewed false positives:
+
+```yaml
+- uses: agent-contracts/skill-preflight@v1
+  with:
+    target: "."
+    config: skill-preflight.json
+```
+
+When `config` is present and `fail-below` is omitted, the Action uses the policy's `failBelow` gate. Without a config or explicit input, it defaults to 70. An explicit `fail-below` input always overrides the policy.
+
+For small overrides, `exclude` and `ignore-rules` accept newline-separated values:
+
+```yaml
+- uses: agent-contracts/skill-preflight@v1
+  with:
+    target: "."
+    exclude: |
+      fixtures/**
+      vendor/**
+    ignore-rules: |
+      compatibility.os-specific-command
+```
+
+See `docs/policy.md` for precedence and suppression visibility.
+
 ## Notes
 
 The composite action runs the published npm package with `npx`.
-
-Before the first public release, replace the action usage with a direct command:
-
-```yaml
-- run: npx -y skill-preflight@latest scan . --fail-below 70
-```
+Use `package-version` to pin a specific npm release when reproducible builds are required.

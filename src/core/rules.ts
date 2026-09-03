@@ -103,6 +103,36 @@ const securityPatterns: PatternRule[] = [
     description: "The skill contains language associated with prompt injection or instruction override.",
     recommendation: "Remove instruction-override text and keep the skill aligned with user and system instructions.",
     scoreImpact: 10
+  },
+  {
+    id: "security.unicode-bidi-control",
+    category: "security",
+    severity: "high",
+    title: "Bidirectional Unicode control character",
+    pattern: /[\u202A-\u202E\u2066-\u2069]/u,
+    description: "The file contains a bidirectional control character that can make instructions appear different from their stored order.",
+    recommendation: "Remove bidirectional controls and keep security-sensitive instructions in visible logical order.",
+    scoreImpact: 9
+  },
+  {
+    id: "security.unicode-tag-characters",
+    category: "security",
+    severity: "critical",
+    title: "Hidden Unicode tag characters",
+    pattern: /[\u{E0000}-\u{E007F}]/u,
+    description: "The file contains Unicode tag characters that can encode text invisible in normal editors.",
+    recommendation: "Remove hidden tag characters and review the surrounding instructions from a raw or escaped text view.",
+    scoreImpact: 12
+  },
+  {
+    id: "security.zero-width-characters",
+    category: "security",
+    severity: "medium",
+    title: "Zero-width Unicode characters",
+    pattern: /[\u200B\u200C\u200D\u2060]/u,
+    description: "The file contains zero-width characters that may conceal or split security-sensitive text.",
+    recommendation: "Remove unexpected zero-width characters or document why they are required.",
+    scoreImpact: 5
   }
 ];
 
@@ -434,8 +464,12 @@ function mcpConfigRule(): Rule {
             });
           }
 
-          const hardcodedSecretKeys = Object.entries(env).filter(([key, value]) =>
-            /(api[_-]?key|token|secret|password|credential)/i.test(key) && typeof value === "string" && value.trim().length > 0
+          const hardcodedSecretKeys = Object.entries(env).filter(
+            ([key, value]) =>
+              /(api[_-]?key|token|secret|password|credential)/i.test(key) &&
+              typeof value === "string" &&
+              value.trim().length > 0 &&
+              !isEnvironmentReference(value)
           );
           if (hardcodedSecretKeys.length > 0) {
             findings.push({
@@ -594,6 +628,7 @@ function hasSkillFrontmatter(file: TextFile): boolean {
 function scanPackageJsonFiles(context: SkillContext): Finding[] {
   const findings: Finding[] = [];
   const packageFiles = context.textFiles.filter((file) => /(^|\/)package\.json$/i.test(file.path));
+  const lockfilePresent = hasLockfile(context);
 
   for (const file of packageFiles) {
     const parsed = parseJsonObject(file);
@@ -646,7 +681,7 @@ function scanPackageJsonFiles(context: SkillContext): Finding[] {
       }
     }
 
-    const dependencyFindings = collectUnpinnedNodeDependencies(file, parsed);
+    const dependencyFindings = collectUnpinnedNodeDependencies(file, parsed, lockfilePresent);
     findings.push(...dependencyFindings);
   }
 
@@ -709,10 +744,15 @@ function scanPythonRequirements(context: SkillContext): Finding[] {
   return findings;
 }
 
-function collectUnpinnedNodeDependencies(file: TextFile, parsed: Record<string, unknown>): Finding[] {
+function collectUnpinnedNodeDependencies(
+  file: TextFile,
+  parsed: Record<string, unknown>,
+  lockfilePresent: boolean
+): Finding[] {
   const findings: Finding[] = [];
   const dependencyGroups = ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"];
-  const riskySpecs: string[] = [];
+  const remoteSpecs: string[] = [];
+  const localSpecs: string[] = [];
   const looseSpecs: string[] = [];
 
   for (const group of dependencyGroups) {
@@ -720,23 +760,42 @@ function collectUnpinnedNodeDependencies(file: TextFile, parsed: Record<string, 
 
     for (const [name, value] of Object.entries(deps)) {
       const spec = String(value);
-      if (/^(git\+|https?:|file:)/i.test(spec)) {
-        riskySpecs.push(`${name}@${spec}`);
-      } else if (spec === "*" || /^latest$/i.test(spec) || /^[\^~]/.test(spec)) {
+      if (/^(git\+|https?:)/i.test(spec)) {
+        remoteSpecs.push(`${name}@${spec}`);
+      } else if (/^(file:|link:)/i.test(spec)) {
+        localSpecs.push(`${name}@${spec}`);
+      } else if (
+        spec === "*" ||
+        /^latest$/i.test(spec) ||
+        (!lockfilePresent && /^[\^~]/.test(spec))
+      ) {
         looseSpecs.push(`${name}@${spec}`);
       }
     }
   }
 
-  if (riskySpecs.length > 0) {
+  if (remoteSpecs.length > 0) {
     findings.push({
       id: "dependencies.node-remote-spec",
       category: "security",
       severity: "high",
-      title: "Node dependency uses remote or local spec",
-      description: `package.json includes dependency specs outside normal pinned registry versions: ${riskySpecs.slice(0, 5).join(", ")}.`,
-      recommendation: "Use trusted registry packages pinned to exact versions, or pin remote specs to immutable commits.",
+      title: "Node dependency uses remote spec",
+      description: `package.json includes remote dependency specs: ${remoteSpecs.slice(0, 5).join(", ")}.`,
+      recommendation: "Use trusted registry packages, or pin remote specs to immutable commits.",
       scoreImpact: 8,
+      file: file.path
+    });
+  }
+
+  if (localSpecs.length > 0) {
+    findings.push({
+      id: "dependencies.node-local-spec",
+      category: "compatibility",
+      severity: "medium",
+      title: "Node dependency uses local path spec",
+      description: `package.json includes local dependency specs that may not exist on another machine: ${localSpecs.slice(0, 5).join(", ")}.`,
+      recommendation: "Publish the dependency, bundle it with the skill, or document the required workspace layout.",
+      scoreImpact: 3,
       file: file.path
     });
   }
@@ -748,7 +807,9 @@ function collectUnpinnedNodeDependencies(file: TextFile, parsed: Record<string, 
       severity: "medium",
       title: "Loose Node dependency versions",
       description: `package.json includes loose dependency specs: ${looseSpecs.slice(0, 5).join(", ")}.`,
-      recommendation: "Pin exact dependency versions or commit a lockfile for reproducible installs.",
+      recommendation: lockfilePresent
+        ? "Replace wildcard or latest dependency specs with bounded versions."
+        : "Pin exact dependency versions or commit a lockfile for reproducible installs.",
       scoreImpact: 4,
       file: file.path
     });
@@ -798,6 +859,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function stringValue(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
+}
+
+function isEnvironmentReference(value: string): boolean {
+  const trimmed = value.trim();
+  return (
+    /^\$\{(?:env:)?[A-Z_][A-Z0-9_]*\}$/i.test(trimmed) ||
+    /^\$env:[A-Z_][A-Z0-9_]*$/i.test(trimmed) ||
+    /^\$[A-Z_][A-Z0-9_]*$/i.test(trimmed) ||
+    /^%[A-Z_][A-Z0-9_]*%$/i.test(trimmed) ||
+    /^\{\{\s*[A-Z_][A-Z0-9_]*\s*\}\}$/i.test(trimmed) ||
+    /^<(?:YOUR_)?[A-Z_][A-Z0-9_]*>$/i.test(trimmed) ||
+    /^(?:YOUR_|REPLACE_ME|CHANGEME)[A-Z0-9_-]*$/i.test(trimmed)
+  );
 }
 
 function escapeRegExp(value: string): string {

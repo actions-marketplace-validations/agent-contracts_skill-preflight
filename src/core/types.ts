@@ -27,6 +27,11 @@ export interface Finding {
   line?: number;
 }
 
+export interface SuppressedFinding {
+  finding: Finding;
+  reason: string;
+}
+
 export interface TextFile {
   path: string;
   absolutePath: string;
@@ -79,12 +84,14 @@ export interface CategoryScore {
 export interface SkillReport {
   target: string;
   rootPath: string;
+  displayPath?: string;
   skillName: string;
   score: number;
   grade: string;
   recommendation: string;
   categories: CategoryScore[];
   findings: Finding[];
+  suppressedFindings: SuppressedFinding[];
   metrics: ScanMetrics;
 }
 
@@ -97,6 +104,11 @@ export interface ScanReport {
     averageScore: number;
     minScore: number;
     highRiskCount: number;
+    suppressedCount: number;
+  };
+  policy: {
+    exclude: string[];
+    ignoreRules: string[];
   };
 }
 
@@ -104,6 +116,8 @@ export interface ScanOptions {
   target?: string;
   installed?: boolean;
   keepTemp?: boolean;
+  exclude?: string[];
+  ignoreRules?: string[];
 }
 
 export interface Rule {

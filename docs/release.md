@@ -5,53 +5,60 @@ Use this checklist before publishing SkillPreflight.
 ## Local Verification
 
 ```bash
-npm install
+npm ci
 npm test
 npm pack --dry-run
-node dist/index.js scan examples/risky-skill
+node dist/index.js --version
+node dist/index.js scan examples --summary --top 1
+npm audit --omit=dev --registry https://registry.npmjs.org/
 ```
 
-## npm Publish
+## One-Time Trusted Publisher Setup
 
-1. Confirm `package.json` name, version, license, and repository fields.
-2. Log in:
+SkillPreflight publishes from GitHub Actions with npm trusted publishing. Configure the npm package once with:
+
+- Provider: GitHub Actions
+- Organization or user: `agent-contracts`
+- Repository: `skill-preflight`
+- Workflow filename: `publish.yml`
+- Allowed action: `npm publish`
+
+The workflow uses GitHub OIDC, so no npm access token or repository secret is required.
+
+## Version And Publish
+
+1. Choose a patch, minor, or major version according to semantic versioning:
 
 ```bash
-npm login
+npm version patch --no-git-tag-version
 ```
 
-3. Publish:
+2. Run the local verification commands again.
+3. Commit and push the release changes, then wait for CI to pass.
+4. Create and push the immutable release tag. The tag triggers `.github/workflows/publish.yml`, which tests and publishes the package through OIDC:
 
 ```bash
-npm publish --access public
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
 
-After publishing, users can run:
+5. After the publish workflow passes, move the stable `v1` Action tag:
 
 ```bash
-npx skill-preflight scan ./my-skill
+git tag -f v1 vX.Y.Z
+git push origin v1 --force
 ```
 
-## GitHub Repository
-
-1. Create a public GitHub repository.
-2. Add the remote:
+6. Create a GitHub Release from `vX.Y.Z` with a concise change and verification summary.
+7. Verify the public package from a clean temporary directory:
 
 ```bash
-git remote add origin https://github.com/agent-contracts/skill-preflight.git
+npx -y skill-preflight@latest --version
+npx -y skill-preflight@latest scan ./my-skill
 ```
 
-3. Commit and push:
+## Credential Hygiene
 
-```bash
-git add .
-git commit -m "Initial SkillPreflight MVP"
-git branch -M main
-git push -u origin main
-```
-
-## First Milestones
-
-- Add a public score badge for README files.
-- Add a website or hosted report viewer.
-- Add npm provenance and signed release workflow.
+- Never commit `.npmrc`, access tokens, or registry credentials.
+- Keep the trusted publisher limited to `agent-contracts/skill-preflight` and `publish.yml`.
+- Revoke old publishing tokens after trusted publishing is verified.
